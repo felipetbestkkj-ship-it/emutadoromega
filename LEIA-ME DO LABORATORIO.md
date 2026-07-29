@@ -27,16 +27,20 @@ Os botoes **Limpar pontos de gasolina**, **Limpar pontos de GNV** e **Reset tota
 
 Para manter uma rotacao especifica durante um ensaio, marque **Fixar RPM** e arraste o controle ate o valor desejado. Enquanto estiver marcado, a RPM fica sob seu controle; pedal e carga continuam definindo o restante do comportamento. Ao escolher um cenario pronto, o modo fixo e desligado para o cenario funcionar normalmente.
 
-## Programacao e Boot Spy
+## Deteccao automatica de programacao
 
-Para estudar o caminho de programacao do ProgBase, marque **Boot Spy (F5)** no painel `ENSAIO` e entao abra **F5 - Programmazione centralina** no ProgBase. O motor virtual passa a registrar cada quadro bruto recebido e devolve sucesso somente para as cinco etapas ja comprovadas:
+O **Boot inteligente automatico** ja inicia habilitado. Quando qualquer versao ou formulario do ProgBase solicita uma atualizacao, o motor virtual reconhece a funcao pelo trafego, muda de `application` para `boot-waiting` ou diretamente para `flash-receiving` e nao depende do nome, tecla, menu ou licenciamento da interface.
+
+A deteccao considera comandos ja conhecidos, cabecalhos de firmware, assinaturas Motorola S-record e Intel HEX e blocos grandes com variacao compativel com payload cifrado. Ele registra cada quadro bruto e tambem conhece cinco etapas comprovadas:
 
 - cancelar flash (`00 09 09`);
 - sair do boot (`00 0A 0A` e `00 0B 0B`);
 - iniciar flash (`93 93`);
 - finalizar flash (`85 85`).
 
-Qualquer quadro novo recebe uma recusa explicita e fica salvo como `boot-spy-unmapped`; isto e proposital. Assim nao confundimos uma resposta inventada com um comportamento verdadeiro do bootloader. Ao encerrar o ensaio, abra a pasta da sessao: `protocol-events.jsonl` guarda TX/RX e `RESUMO.md` contabiliza os quadros de boot. O Boot Spy revela a linguagem usada pelo ProgBase para programar a ECU virtual; ele nao extrai, por si so, o codigo residente do bootloader.
+Antes de uma sequencia de programação reconhecida, qualquer quadro novo recebe uma recusa explicita e fica salvo como `boot-spy-unmapped`. Depois que o fluxo de boot foi reconhecido, negociacoes e blocos desconhecidos recebem uma resposta adaptativa para permitir que o ProgBase avance. Eles ficam separados como `boot-spy-adaptive`, com tamanho, ordem, tipo provável e SHA-256; nunca sao confundidos com comportamento comprovado. S-record, Intel HEX e blocos binarios possuem classificacao independente.
+
+Ao encerrar o ensaio, `protocol-events.jsonl` guarda TX/RX, eventos `boot-block` catalogam o firmware recebido e `RESUMO.md` contabiliza o fluxo. O Boot inteligente revela a linguagem usada pelo ProgBase e conserva a imagem transmitida; ele nao transforma automaticamente o conteúdo cifrado em codigo aberto do bootloader.
 
 O teste automatizado do protocolo fica em `Sistema\testar-boot-spy.ps1`. Ele exercita identificacao normal, todos os sentinelas conhecidos, comandos fragmentados, dois comandos no mesmo pacote, dezenas de quadros desconhecidos, desligamento do modo estrito, checksum invalido, desconexao e reconexao.
 

@@ -60,6 +60,46 @@ function New-NackFrame([byte]$Code = 0x10) {
     return $frame
 }
 
+function Get-ByteHash([byte[]]$Bytes) {
+    $sha = [Security.Cryptography.SHA256]::Create()
+    try {
+        return ([BitConverter]::ToString($sha.ComputeHash($Bytes))).Replace('-', '').ToLowerInvariant()
+    } finally {
+        $sha.Dispose()
+    }
+}
+
+function Get-BootPayloadKind([byte[]]$Bytes) {
+    if ($Bytes.Length -ge 2 -and $Bytes[0] -eq 0x53 -and $Bytes[1] -ge 0x30 -and $Bytes[1] -le 0x39) {
+        return 'motorola-s-record'
+    }
+    if ($Bytes.Length -ge 1 -and $Bytes[0] -eq 0x3A) {
+        return 'intel-hex'
+    }
+    return 'binary-or-framed'
+}
+
+function Get-ProgrammingIntent([byte[]]$Bytes) {
+    $kind = Get-BootPayloadKind $Bytes
+    if ($kind -in @('motorola-s-record', 'intel-hex')) {
+        return @{ detected = $true; confidence = 'high'; reason = $kind; payloadKind = $kind }
+    }
+
+    $ascii = [Text.Encoding]::ASCII.GetString($Bytes)
+    if ($ascii -match 'ENCRYPTED_(ECU_)?FILE') {
+        return @{ detected = $true; confidence = 'high'; reason = 'encrypted-firmware-header'; payloadKind = 'encrypted-container' }
+    }
+
+    if ($Bytes.Length -ge 24) {
+        $distinct = @($Bytes | Sort-Object -Unique).Count
+        $ratio = $distinct / [double]$Bytes.Length
+        if ($ratio -ge 0.55) {
+            return @{ detected = $true; confidence = 'medium'; reason = 'large-high-variation-block'; payloadKind = $kind }
+        }
+    }
+    return @{ detected = $false; confidence = 'low'; reason = 'ordinary-or-unknown-command'; payloadKind = $kind }
+}
+
 function Set-U16Le([byte[]]$Bytes, [int]$Offset, [int]$Value) {
     $Bytes[$Offset] = [byte]($Value -band 0xFF)
     $Bytes[$Offset + 1] = [byte](($Value -shr 8) -band 0xFF)
@@ -482,7 +522,11 @@ function New-InteractiveTelemetry([string]$Path) {
     return New-AckFrame $payload
 }
 
-function Apply-VirtualBootSpy([byte[]]$Request, [bool]$Enabled) {
+function Apply-VirtualBootSpy(
+    [byte[]]$Request,
+    [bool]$Enabled,
+    [bool]$HasObservedResponse = $false
+) {
     if (-not $Enabled) {
         return $null
     }
@@ -497,14 +541,50 @@ function Apply-VirtualBootSpy([byte[]]$Request, [bool]$Enabled) {
         default { '' }
     }
     if ([string]::IsNullOrWhiteSpace($action)) {
-        return @{ target = 'BOOT_SPY'; known = $false; action = 'unmapped'; mode = $script:VirtualBoot.mode }
+        $intent = Get-ProgrammingIntent $Request
+        if ($script:VirtualBoot.mode -eq 'application' -and -not $HasObservedResponse -and $intent.detected) {
+            $script:VirtualBoot.mode = 'flash-receiving'
+            $script:VirtualBoot.frames++
+            $script:VirtualBoot.records = 1
+            $script:VirtualBoot.blockBytes = $Request.Length
+            return @{
+                target = 'BOOT_SPY'; known = $false; adaptive = $true
+                action = 'program-block-autodetected'; mode = $script:VirtualBoot.mode
+                record = 1; bytes = $Request.Length; totalBytes = $Request.Length
+                sha256 = (Get-ByteHash $Request); payloadKind = $intent.payloadKind
+                detectedBy = $intent.reason; detectionConfidence = $intent.confidence
+            }
+        }
+        if ($script:VirtualBoot.mode -eq 'boot-waiting') {
+            $script:VirtualBoot.frames++
+            return @{
+                target = 'BOOT_SPY'; known = $false; adaptive = $true
+                action = 'boot-negotiation'; mode = $script:VirtualBoot.mode
+                bytes = $Request.Length; sha256 = (Get-ByteHash $Request)
+                payloadKind = (Get-BootPayloadKind $Request)
+            }
+        }
+        if ($script:VirtualBoot.mode -eq 'flash-receiving') {
+            $script:VirtualBoot.frames++
+            $script:VirtualBoot.records++
+            $script:VirtualBoot.blockBytes += $Request.Length
+            return @{
+                target = 'BOOT_SPY'; known = $false; adaptive = $true
+                action = 'program-block'; mode = $script:VirtualBoot.mode
+                record = $script:VirtualBoot.records; bytes = $Request.Length
+                totalBytes = $script:VirtualBoot.blockBytes
+                sha256 = (Get-ByteHash $Request)
+                payloadKind = (Get-BootPayloadKind $Request)
+            }
+        }
+        return @{ target = 'BOOT_SPY'; known = $false; adaptive = $false; action = 'unmapped'; mode = $script:VirtualBoot.mode }
     }
 
     switch ($action) {
         'cancel-flash' { $script:VirtualBoot.mode = 'boot-waiting' }
         'exit-boot' { $script:VirtualBoot.mode = 'application' }
         'force-exit-boot' { $script:VirtualBoot.mode = 'application' }
-        'start-flash' { $script:VirtualBoot.mode = 'flash-receiving'; $script:VirtualBoot.records = 0 }
+        'start-flash' { $script:VirtualBoot.mode = 'flash-receiving'; $script:VirtualBoot.records = 0; $script:VirtualBoot.blockBytes = 0 }
         'end-flash' { $script:VirtualBoot.mode = 'boot-waiting' }
     }
     $script:VirtualBoot.frames++
@@ -616,7 +696,7 @@ $script:ResolvedMemoryPath = if ([string]::IsNullOrWhiteSpace($MemoryPath)) { ''
 $script:VirtualMemory = Initialize-VirtualMemory $responses $script:ResolvedMemoryPath
 Sync-VirtualMemoryToResponses $responses
 Apply-PersistedAutoCalReset
-$script:VirtualBoot = [ordered]@{ mode = 'application'; frames = 0; records = 0 }
+$script:VirtualBoot = [ordered]@{ mode = 'application'; frames = 0; records = 0; blockBytes = 0 }
 $script:ScenarioTick = 0
 $script:InteractiveState = $null
 $script:InteractiveStateStamp = $null
@@ -673,8 +753,17 @@ if ($SelfTest) {
     if ((Convert-BytesToHex $bootStart) -ne '93 93') { throw 'Parser nao reconheceu o sentinela de inicio do flash' }
     $bootAction = Apply-VirtualBootSpy $bootStart $true
     if ($null -eq $bootAction -or -not $bootAction.known -or $bootAction.mode -ne 'flash-receiving') { throw 'Boot Spy nao entrou no estado de recepcao virtual' }
+    $bootBlock = Apply-VirtualBootSpy (Convert-HexToBytes '12 34 46') $true
+    if ($null -eq $bootBlock -or -not $bootBlock.adaptive -or $bootBlock.action -ne 'program-block') { throw 'Boot inteligente nao recebeu bloco dentro da sessao de flash' }
+    $null = Apply-VirtualBootSpy (Convert-HexToBytes '85 85') $true
+    $null = Apply-VirtualBootSpy (Convert-HexToBytes '00 0A 0A') $true
     $bootUnknown = Apply-VirtualBootSpy (Convert-HexToBytes '12 34 46') $true
-    if ($null -eq $bootUnknown -or $bootUnknown.known -or -not (Test-RequestChecksum (New-NackFrame))) { throw 'Boot Spy nao sinalizou comando desconhecido com NACK valido' }
+    if ($null -eq $bootUnknown -or $bootUnknown.known -or $bootUnknown.adaptive -or -not (Test-RequestChecksum (New-NackFrame))) { throw 'Boot Spy nao sinalizou comando desconhecido fora de uma sessao com NACK valido' }
+    $observedPayload = [Text.Encoding]::ASCII.GetBytes('S1130000285F245F2212226A000424290008237C2A')
+    $observedIntent = Apply-VirtualBootSpy $observedPayload $true $true
+    if ($observedIntent.adaptive -or $script:VirtualBoot.mode -ne 'application') {
+        throw 'Detector de programacao alterou o estado para um pedido que ja possui resposta observada'
+    }
     $autoMatch = Apply-VirtualAutoMatch (Convert-HexToBytes '02 24 04 08 32')
     if ($null -eq $autoMatch -or $autoMatch.target -ne 'AUTOMATCH_HYPOTHESIS' -or $autoMatch.changed -le 0) {
         throw 'AutoMatch experimental nao atualizou a Curva K virtual'
@@ -749,11 +838,15 @@ while ($true) {
                 }
                 $requestKey = Convert-BytesToHex $request
                 $bootSpyEnabled = ($Scenario -eq 'interactive' -and (Get-BootSpyEnabled $ScenarioFile))
-                $bootResult = Apply-VirtualBootSpy $request $bootSpyEnabled
+                $hasObservedResponse = $responses.ContainsKey($requestKey)
+                $bootResult = Apply-VirtualBootSpy $request $bootSpyEnabled $hasObservedResponse
                 $virtualWrite = Apply-VirtualWrite $request
                 if ($null -ne $bootResult -and $bootResult.known) {
                     $response = New-AckFrame
                     $source = 'boot-spy-known'
+                } elseif ($null -ne $bootResult -and $bootResult.adaptive -and -not $responses.ContainsKey($requestKey)) {
+                    $response = New-AckFrame
+                    $source = 'boot-spy-adaptive'
                 } elseif ($null -ne $bootResult -and -not $bootResult.known -and -not $responses.ContainsKey($requestKey)) {
                     $response = New-NackFrame
                     $source = 'boot-spy-unmapped'
@@ -762,7 +855,7 @@ while ($true) {
                     if ($null -eq $virtualWrite) { $virtualWrite = Apply-VirtualAutoCalEnable $request }
                     if ($null -eq $virtualWrite) { $virtualWrite = Apply-VirtualAutoMatch $request }
                 }
-                if ($null -ne $bootResult -and ($bootResult.known -or (-not $bootResult.known -and -not $responses.ContainsKey($requestKey)))) {
+                if ($null -ne $bootResult -and ($bootResult.known -or ($bootResult.adaptive -and -not $responses.ContainsKey($requestKey)) -or (-not $bootResult.known -and -not $responses.ContainsKey($requestKey)))) {
                     # Response and source were intentionally assigned above.
                 } elseif ($null -ne $virtualWrite) {
                     $response = New-AckFrame
@@ -799,6 +892,17 @@ while ($true) {
                     $event.stateSequence = $script:InteractiveStateSequence
                 }
                 Write-SessionEvent $event
+                if ($source -eq 'boot-spy-adaptive') {
+                    Write-SessionEvent @{
+                        type = 'boot-block'; request = $requestKey
+                        action = $bootResult.action; payloadKind = $bootResult.payloadKind
+                        bytes = $bootResult.bytes; totalBytes = $bootResult.totalBytes
+                        record = $bootResult.record; sha256 = $bootResult.sha256
+                        detectedBy = $bootResult.detectedBy
+                        detectionConfidence = $bootResult.detectionConfidence
+                        bootMode = $script:VirtualBoot.mode
+                    }
+                }
                 if ($bootSpyEnabled) {
                     Write-SessionEvent @{ type = 'boot-raw'; direction = 'RX'; request = $requestKey; frame = (Convert-BytesToHex $response); bytes = $response.Length; source = $source; bootMode = $script:VirtualBoot.mode }
                 }
