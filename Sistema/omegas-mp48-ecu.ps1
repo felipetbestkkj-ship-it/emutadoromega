@@ -69,11 +69,20 @@ function Get-MapReadKey([int]$Row) {
     return ('2A 54 00 {0:X2} {1:X2}' -f $Row, $checksum)
 }
 
+function New-VirtualAutoCalMemory {
+    return [ordered]@{
+        enabled = $false; freshOnNextSample = $false
+        petrolCount = [int[]]::new(18); petrolInj = [int[]]::new(18); petrolMap = [int[]]::new(18)
+        gasCount = [int[]]::new(18); gasInj = [int[]]::new(18); gasMap = [int[]]::new(18)
+        samples = 0; stableFuel = ''; stableBand = -1; stableTicks = 0
+    }
+}
+
 function Initialize-VirtualMemory(
     [Collections.Generic.Dictionary[string, byte[]]]$Responses,
     [string]$Path
 ) {
-    $memory = [ordered]@{ mul = [int[]]::new(30); map = @(); writeCount = 0; autoCalResetMask = 0; autoCalResetCount = 0; autoMatchCount = 0 }
+    $memory = [ordered]@{ mul = [int[]]::new(30); map = @(); writeCount = 0; autoCalResetMask = 0; autoCalResetCount = 0; autoMatchCount = 0; autoCal = (New-VirtualAutoCalMemory) }
     $mulResponse = $Responses['29 61 01 8B']
     for ($index = 0; $index -lt 30; $index++) {
         $memory.mul[$index] = [int]$mulResponse[2 + ($index * 2)] + ([int]$mulResponse[3 + ($index * 2)] * 256)
@@ -97,6 +106,17 @@ function Initialize-VirtualMemory(
                 if ($null -ne $saved.autoCalResetMask) { $memory.autoCalResetMask = [int]$saved.autoCalResetMask }
                 if ($null -ne $saved.autoCalResetCount) { $memory.autoCalResetCount = [int]$saved.autoCalResetCount }
                 if ($null -ne $saved.autoMatchCount) { $memory.autoMatchCount = [int]$saved.autoMatchCount }
+                if ($null -ne $saved.autoCal -and $saved.autoCal.petrolCount.Count -eq 18 -and $saved.autoCal.gasCount.Count -eq 18) {
+                    foreach ($name in @('petrolCount','petrolInj','petrolMap','gasCount','gasInj','gasMap')) {
+                        if ($null -ne $saved.autoCal.$name -and $saved.autoCal.$name.Count -eq 18) { $memory.autoCal.$name = [int[]]@($saved.autoCal.$name | ForEach-Object { [int]$_ }) }
+                    }
+                    $memory.autoCal.enabled = [bool]$saved.autoCal.enabled
+                    $memory.autoCal.freshOnNextSample = [bool]$saved.autoCal.freshOnNextSample
+                    $memory.autoCal.samples = [int]$saved.autoCal.samples
+                    $memory.autoCal.stableFuel = [string]$saved.autoCal.stableFuel
+                    $memory.autoCal.stableBand = [int]$saved.autoCal.stableBand
+                    $memory.autoCal.stableTicks = [int]$saved.autoCal.stableTicks
+                }
             }
         } catch {
             Write-Log "virtual-memory-read-error=$($_.Exception.Message)"
@@ -161,6 +181,112 @@ function Reset-ObservedVector([string]$Key) {
     Update-ResponseChecksum $response
 }
 
+function Set-ObservedU16Vector([string]$Key, [int[]]$Values) {
+    if (-not $responses.ContainsKey($Key)) { return }
+    $response = $responses[$Key]
+    for ($index = 0; $index -lt $Values.Length; $index++) { Set-U16Le $response (2 + ($index * 2)) $Values[$index] }
+    Update-ResponseChecksum $response
+}
+
+function Set-ObservedU8Vector([string]$Key, [int[]]$Values) {
+    if (-not $responses.ContainsKey($Key)) { return }
+    $response = $responses[$Key]
+    for ($index = 0; $index -lt $Values.Length; $index++) { $response[2 + $index] = [byte]($Values[$index] -band 0xFF) }
+    Update-ResponseChecksum $response
+}
+
+function Reset-VirtualAutoCalMemory([int]$Mode = 4) {
+    if ($Mode -in @(1,4)) { $script:VirtualMemory.autoCal.petrolCount = [int[]]::new(18); $script:VirtualMemory.autoCal.petrolInj = [int[]]::new(18); $script:VirtualMemory.autoCal.petrolMap = [int[]]::new(18) }
+    if ($Mode -in @(2,4)) { $script:VirtualMemory.autoCal.gasCount = [int[]]::new(18); $script:VirtualMemory.autoCal.gasInj = [int[]]::new(18); $script:VirtualMemory.autoCal.gasMap = [int[]]::new(18) }
+    if ($Mode -eq 4) { $script:VirtualMemory.autoCal.samples = 0; $script:VirtualMemory.autoCal.stableFuel = ''; $script:VirtualMemory.autoCal.stableBand = -1; $script:VirtualMemory.autoCal.stableTicks = 0 }
+}
+
+function Get-AutoCalBand([int]$MapRaw, $State) {
+    if ($null -ne $State.autoCalBand -and [int]$State.autoCalBand -ge 0 -and [int]$State.autoCalBand -lt 18) { return [int]$State.autoCalBand }
+    $thresholds = Get-ObservedU16Vector '29 4C 01 76'
+    for ($index = 0; $index -lt $thresholds.Length; $index++) { if ($MapRaw -le $thresholds[$index]) { return $index } }
+    return 17
+}
+
+function Get-InterpolatedReturnCurve([int[]]$Injection, [int[]]$Pressure, [int[]]$Count) {
+    $axis = [int[]](Get-ObservedU16Vector '29 4B 01 75')
+    $anchors = [Collections.Generic.List[object]]::new()
+    for ($index = 0; $index -lt 18; $index++) { if ($Count[$index] -gt 0 -and $Injection[$index] -gt 0 -and $Pressure[$index] -gt 0) { $anchors.Add([pscustomobject]@{ x=$Injection[$index]; y=$Pressure[$index] }) } }
+    if ($anchors.Count -eq 0) { return [int[]]::new(30) }
+    $ordered = @($anchors | Sort-Object x)
+    $result = [int[]]::new(30)
+    for ($point = 0; $point -lt 30; $point++) {
+        $x = $axis[$point]
+        if ($x -le $ordered[0].x) { $result[$point] = $ordered[0].y; continue }
+        if ($x -ge $ordered[-1].x) { $result[$point] = $ordered[-1].y; continue }
+        for ($anchor = 0; $anchor -lt $ordered.Count - 1; $anchor++) {
+            $left = $ordered[$anchor]; $right = $ordered[$anchor + 1]
+            if ($x -ge $left.x -and $x -le $right.x) {
+                $result[$point] = [int][Math]::Round($left.y + (($x - $left.x) * ($right.y - $left.y) / ($right.x - $left.x)))
+                break
+            }
+        }
+    }
+    return $result
+}
+
+function Sync-VirtualAutoCalToResponses {
+    $auto = $script:VirtualMemory.autoCal
+    Set-ObservedU16Vector '29 5B 01 85' $auto.petrolCount; Set-ObservedU16Vector '29 5C 01 86' $auto.gasCount
+    Set-ObservedU16Vector '29 62 01 8C' $auto.petrolInj; Set-ObservedU16Vector '29 63 01 8D' $auto.petrolMap
+    Set-ObservedU16Vector '29 5F 01 89' $auto.gasInj; Set-ObservedU16Vector '29 60 01 8A' $auto.gasMap
+    Set-ObservedU16Vector '29 5D 01 87' $auto.gasInj; Set-ObservedU16Vector '29 5E 01 88' $auto.gasMap
+    $zonesPetrol = [int[]]::new(4); $zonesGas = [int[]]::new(4); $ranges = @(@(0,5),@(6,9),@(10,13),@(14,17))
+    for ($zone = 0; $zone -lt 4; $zone++) {
+        $range = $ranges[$zone]; $zonesPetrol[$zone] = if (@($auto.petrolCount[$range[0]..$range[1]] | Where-Object { $_ -ge 3 }).Count -gt 0) { 1 } else { 0 }
+        $zonesGas[$zone] = if (@($auto.gasCount[$range[0]..$range[1]] | Where-Object { $_ -ge 3 }).Count -gt 0) { 1 } else { 0 }
+    }
+    Set-ObservedU8Vector '29 6F 01 99' $zonesPetrol; Set-ObservedU8Vector '29 70 01 9A' $zonesGas
+    Set-ObservedU16Vector '29 8D 01 B7' (Get-InterpolatedReturnCurve $auto.petrolInj $auto.petrolMap $auto.petrolCount)
+    Set-ObservedU16Vector '29 8E 01 B8' (Get-InterpolatedReturnCurve $auto.gasInj $auto.gasMap $auto.gasCount)
+}
+
+function Apply-InteractiveAutoCalSample($State) {
+    $auto = $script:VirtualMemory.autoCal
+    if ([bool]$State.autoCalSyntheticStart) { $auto.enabled = $true; $auto.freshOnNextSample = $true }
+    if (-not $auto.enabled) { return $null }
+    if ($auto.freshOnNextSample) { Reset-VirtualAutoCalMemory 4; $auto.freshOnNextSample = $false }
+    $fuel = [string]$State.fuel
+    if ($fuel -notin @('PETROL','CNG')) { return $null }
+    $mapRaw = [int][Math]::Round([double]$State.mapBar * 1024)
+    $injRaw = [int][Math]::Round([double]$State.petrolMs * 512)
+    if ($mapRaw -le 0 -or $injRaw -le 0 -or [bool]$State.cutoff) { return $null }
+    $band = Get-AutoCalBand $mapRaw $State
+    if (-not [bool]$State.stable -and -not [bool]$State.autoCalStimulus) {
+        $auto.stableFuel = ''; $auto.stableBand = -1; $auto.stableTicks = 0
+        return $null
+    }
+    if ($auto.stableFuel -eq $fuel -and $auto.stableBand -eq $band) { $auto.stableTicks++ } else { $auto.stableFuel = $fuel; $auto.stableBand = $band; $auto.stableTicks = 1 }
+    if ($auto.stableTicks -lt 3) { return $null }
+    $countName = if ($fuel -eq 'PETROL') { 'petrolCount' } else { 'gasCount' }
+    $injName = if ($fuel -eq 'PETROL') { 'petrolInj' } else { 'gasInj' }
+    $mapName = if ($fuel -eq 'PETROL') { 'petrolMap' } else { 'gasMap' }
+    $count = [int]$auto.$countName[$band]
+    if ($count -lt 10) {
+        $auto.$injName[$band] = [int][Math]::Round((($auto.$injName[$band] * $count) + $injRaw) / ($count + 1))
+        $auto.$mapName[$band] = [int][Math]::Round((($auto.$mapName[$band] * $count) + $mapRaw) / ($count + 1))
+        $auto.$countName[$band] = $count + 1
+    } else {
+        $auto.$injName[$band] = [int][Math]::Round((($auto.$injName[$band] * 9) + $injRaw) / 10)
+        $auto.$mapName[$band] = [int][Math]::Round((($auto.$mapName[$band] * 9) + $mapRaw) / 10)
+    }
+    $auto.samples++; Sync-VirtualAutoCalToResponses; Save-VirtualMemory
+    return [pscustomobject]@{ target='AUTOCAL_SAMPLE'; fuel=$fuel; band=$band; count=$auto.$countName[$band]; samples=$auto.samples; stableTicks=$auto.stableTicks }
+}
+
+function Apply-VirtualAutoCalEnable([byte[]]$Request) {
+    if ($Request.Length -ne 5 -or $Request[0] -ne 0x12 -or $Request[1] -ne 0x4A -or $Request[2] -ne 0x01 -or $Request[3] -notin @(0,1) -or -not (Test-RequestChecksum $Request)) { return $null }
+    $script:VirtualMemory.autoCal.enabled = ($Request[3] -eq 1)
+    if ($script:VirtualMemory.autoCal.enabled) { $script:VirtualMemory.autoCal.freshOnNextSample = $true }
+    Save-VirtualMemory
+    return [pscustomobject]@{ target='AUTOCAL_ENABLE'; enabled=$script:VirtualMemory.autoCal.enabled }
+}
+
 function Apply-VirtualAutoCalReset([byte[]]$Request) {
     # Comandos C2 documentados: 01=gasolina, 02=GNV, 04=total.
     if ($Request.Length -ne 5 -or $Request[0] -ne 0x02 -or $Request[1] -ne 0x24 -or $Request[2] -ne 0x04) { return $null }
@@ -169,9 +295,11 @@ function Apply-VirtualAutoCalReset([byte[]]$Request) {
     if ($mode -notin @(1, 2, 4)) { return $null }
 
     if ($mode -in @(1, 4)) {
+        Reset-VirtualAutoCalMemory $mode
         foreach ($key in @('29 5B 01 85','29 62 01 8C','29 63 01 8D','29 6F 01 99','29 8D 01 B7')) { Reset-ObservedVector $key }
     }
     if ($mode -in @(2, 4)) {
+        if ($mode -eq 2) { Reset-VirtualAutoCalMemory $mode }
         foreach ($key in @('29 5C 01 86','29 5D 01 87','29 5E 01 88','29 5F 01 89','29 60 01 8A','29 70 01 9A','29 8E 01 B8')) { Reset-ObservedVector $key }
     }
     if ($mode -eq 4) {
@@ -486,6 +614,13 @@ if ($SelfTest) {
     if ($null -eq $autoMatch -or $autoMatch.target -ne 'AUTOMATCH_HYPOTHESIS' -or $autoMatch.changed -le 0) {
         throw 'AutoMatch experimental nao atualizou a Curva K virtual'
     }
+    $enableAutoCal = Apply-VirtualAutoCalEnable (Convert-HexToBytes '12 4A 01 01 5E')
+    if ($null -eq $enableAutoCal -or -not $enableAutoCal.enabled) { throw 'AutoCal virtual nao foi habilitada' }
+    $syntheticSample = [pscustomobject]@{ fuel='PETROL'; mapBar=0.20; petrolMs=3.5; cutoff=$false; stable=$true; autoCalBand=1; autoCalStimulus=$true; autoCalSyntheticStart=$true }
+    for ($sampleIndex = 0; $sampleIndex -lt 3; $sampleIndex++) { $null = Apply-InteractiveAutoCalSample $syntheticSample; $syntheticSample.autoCalSyntheticStart=$false }
+    if ($script:VirtualMemory.autoCal.petrolCount[1] -lt 1 -or (Get-ObservedU16Vector '29 62 01 8C')[1] -le 0 -or (Get-ObservedU16Vector '29 8D 01 B7')[0] -le 0) {
+        throw 'AutoCal virtual nao acumulou nem publicou uma amostra estavel'
+    }
     $petrolCountBefore = [byte[]]$responses['29 5B 01 85'].Clone()
     $resetPetrol = Apply-VirtualAutoCalReset (Convert-HexToBytes '02 24 04 01 2B')
     if ($null -eq $resetPetrol -or $resetPetrol.target -ne 'AUTOCAL_RESET' -or $resetPetrol.mode -ne 'gasolina') {
@@ -545,12 +680,20 @@ while ($true) {
                 $requestKey = Convert-BytesToHex $request
                 $virtualWrite = Apply-VirtualWrite $request
                 if ($null -eq $virtualWrite) { $virtualWrite = Apply-VirtualAutoCalReset $request }
+                if ($null -eq $virtualWrite) { $virtualWrite = Apply-VirtualAutoCalEnable $request }
                 if ($null -eq $virtualWrite) { $virtualWrite = Apply-VirtualAutoMatch $request }
                 if ($null -ne $virtualWrite) {
                     $response = New-AckFrame
-                    $source = if ($virtualWrite.target -eq 'AUTOCAL_RESET') { 'virtual-autocal-reset' } elseif ($virtualWrite.target -eq 'AUTOMATCH_HYPOTHESIS') { 'virtual-automatch-hypothesis' } else { 'virtual-write' }
+                    $source = if ($virtualWrite.target -eq 'AUTOCAL_RESET') { 'virtual-autocal-reset' } elseif ($virtualWrite.target -eq 'AUTOCAL_ENABLE') { 'virtual-autocal-enable' } elseif ($virtualWrite.target -eq 'AUTOMATCH_HYPOTHESIS') { 'virtual-automatch-hypothesis' } else { 'virtual-write' }
                 } elseif ($requestKey -eq '48 01 49' -and $Scenario -ne 'captured') {
                     $script:ScenarioTick++
+                    if ($Scenario -eq 'interactive') {
+                        try {
+                            $stateForSample = Get-Content -LiteralPath $ScenarioFile -Raw | ConvertFrom-Json
+                            $sample = Apply-InteractiveAutoCalSample $stateForSample
+                            if ($null -ne $sample) { Write-Log "autocal-sample fuel=$($sample.fuel) band=$($sample.band) count=$($sample.count)" }
+                        } catch { Write-Log "autocal-sample-read-error=$($_.Exception.Message)" }
+                    }
                     $response = if ($Scenario -eq 'interactive') { New-InteractiveTelemetry $ScenarioFile } else { New-ScenarioTelemetry $Scenario $script:ScenarioTick }
                     $source = "scenario-$Scenario"
                 } elseif ($responses.ContainsKey($requestKey)) {

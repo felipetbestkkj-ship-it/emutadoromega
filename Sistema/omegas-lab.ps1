@@ -20,6 +20,7 @@ $script:lastProtocolSummary = [ordered]@{ last='Aguardando o ProgBase'; source='
 $script:plant = [ordered]@{ running=$false; rpm=0.0; mapBar=0.28; petrolMs=0.0; gasMs=0.0; waterC=24.0; gasC=24.0; pressureBar=1.10; correction=0.0; level=68.0; stableSince=$null }
 $script:campaign = $null
 $script:replay = $null
+$script:autoCalSession = $null
 $script:behaviorModelPath = Join-Path $laboratoryRoot 'Dados\modelo-comportamental.json'
 $script:behaviorBuckets = @()
 $script:behaviorModelStatus = 'Fallback interno: modelo comportamental indisponivel.'
@@ -278,6 +279,36 @@ function Start-LogReplay {
     Write-LabEvent @{type='replay-start'; sampleCount=$script:replay.samples.Count; startSequence=$script:replay.startSequence; mode='loop'}
     $status.Text="Replay em loop iniciado: $($script:replay.samples.Count) amostras importadas."
 }
+function New-AutoCalSessionState {
+    $session = $script:autoCalSession
+    $samplesPerBand = 6; $perFuel = 18 * $samplesPerBand
+    $fuel = if($session.index -lt $perFuel){'PETROL'}else{'CNG'}
+    $band = [int](($session.index % $perFuel) / $samplesPerBand)
+    $map = [Math]::Round(0.15 + (0.05 * $band), 3)
+    $petrolMs = [Math]::Round(1.4 + (10.4 * $map), 2)
+    $gasMs = if($fuel -eq 'CNG'){[Math]::Round($petrolMs * (1.08 + (0.015 * [Math]::Sin($band))),2)}else{0}
+    return [ordered]@{
+        rpm=[int](1150 + (130 * $band)); petrolMs=$petrolMs; gasMs=$gasMs
+        mapBar=$map; pressureBar=2.25; waterC=82; gasC=68; levelPercent=68; dynamicCorrection=0
+        fuel=$fuel; cutoff=$false; stable=$true; stableSeconds=4; behaviorState='AUTOCAL_STIMULUS'
+        manualRpm=$false; requestedRpm=0; autoCalBand=$band; autoCalStimulus=$true
+        autoCalSyntheticStart=($session.index -eq 0); modelBucket="AutoCal sintetica / $fuel / faixa $($band + 1)"
+        modelStatus="Sessao AutoCal completa: $($session.index + 1) de $($session.total)"
+    }
+}
+function Start-VirtualAutoCalSession {
+    if($null -ne $script:campaign){Stop-ProgBaseCampaign 'inicio-autocal'}
+    if($null -ne $script:replay){Stop-LogReplay 'inicio-autocal'}
+    $script:autoCalSession=[ordered]@{index=0; total=216; startSequence=$script:stateSequence+1}
+    Write-LabEvent @{type='autocal-session-start'; total=216; detail='18 faixas gasolina + 18 faixas GNV, seis leituras estaveis por faixa.'}
+    $status.Text='Sessao AutoCal virtual iniciada: estabilizando e preenchendo as 18 faixas.'
+}
+function Stop-VirtualAutoCalSession([string]$Reason) {
+    if($null -eq $script:autoCalSession){return}
+    Write-LabEvent @{type='autocal-session-end'; completed=$script:autoCalSession.index; total=$script:autoCalSession.total; reason=$Reason; endSequence=$script:stateSequence}
+    $status.Text="Sessao AutoCal encerrada: $($script:autoCalSession.index) de $($script:autoCalSession.total) estados."
+    $script:autoCalSession=$null
+}
 function Approach([double]$Current, [double]$Target, [double]$Rate, [double]$Dt) {
     return $Current + ($Target - $Current) * [Math]::Min(1, $Rate * $Dt)
 }
@@ -324,7 +355,7 @@ function Update-Plant {
     $rpm=[int][Math]::Round($script:plant.rpm); $map=[Math]::Round([Math]::Max(.15,[Math]::Min(1.45,$script:plant.mapBar)),3)
     $cutoff=($state -eq 'CUTOFF')
     $petrolMs=[Math]::Max(0,[Math]::Min(22.5,$script:plant.petrolMs)); $gasMs=[Math]::Max(0,[Math]::Min(38,$script:plant.gasMs))
-    $stable=($modelFuel -eq 'CNG' -and $state -in @('CRUISE','LOAD') -and $script:plant.waterC -ge 60 -and ($script:plant.pressureBar-$map) -ge .5 -and $brake -lt .05)
+    $stable=($modelFuel -in @('CNG','PETROL') -and $state -in @('CRUISE','LOAD') -and $script:plant.waterC -ge 60 -and ($script:plant.pressureBar-$map) -ge .5 -and $brake -lt .05)
     if($stable){if($null -eq $script:plant.stableSince){$script:plant.stableSince=$now}}else{$script:plant.stableSince=$null}
     $stableSeconds=if($null -eq $script:plant.stableSince){0}else{[int](($now-$script:plant.stableSince).TotalSeconds)}
     [ordered]@{ rpm=$rpm; petrolMs=[Math]::Round($petrolMs,2); gasMs=[Math]::Round($gasMs,2); mapBar=$map; pressureBar=[Math]::Round($script:plant.pressureBar,3); waterC=[int][Math]::Round($script:plant.waterC); gasC=[int][Math]::Round($script:plant.gasC); levelPercent=[int][Math]::Round($script:plant.level); dynamicCorrection=[int][Math]::Round($script:plant.correction); fuel=$fuel; cutoff=$cutoff; stable=$stable; stableSeconds=$stableSeconds; behaviorState=$state; manualRpm=$controls.manualRpmEnabled.Checked; requestedRpm=if($controls.manualRpmEnabled.Checked){[int]$controls.manualRpm.Value}else{0}; modelBucket=if($null -eq $bucket){'fallback'}else{"$($bucket.fuel)/$($bucket.state)/$($bucket.rpmBin)/$($bucket.loadBin)"}; modelStatus=$script:behaviorModelStatus }
@@ -408,9 +439,9 @@ $topStatus=Add-Label '● ECU virtual: preparando     ■ ProgBase: aguardando' 
 $elapsedLabel=Add-Label 'Sessao: 00:00:00' 1000 20 210 24; $elapsedLabel.TextAlign='MiddleRight'
 $evidence=Add-Label 'Bancada segura: somente ECU virtual. Os registros da sessao ficam juntos e as respostas mantem sua origem.' 20 51 1180 24; $evidence.ForeColor=[Drawing.Color]::Khaki
 
-$controlPane=New-Object Windows.Forms.GroupBox; $controlPane.Text='CONTROLE - o que voce quer provocar'; $controlPane.Location='20,85'; $controlPane.Size='340,575'; $controlPane.ForeColor=[Drawing.Color]::LightSkyBlue; $form.Controls.Add($controlPane)
-$motorPane=New-Object Windows.Forms.GroupBox; $motorPane.Text='MOTOR VIRTUAL - o que esta sendo produzido'; $motorPane.Location='375,85'; $motorPane.Size='450,575'; $motorPane.ForeColor=[Drawing.Color]::LightSkyBlue; $form.Controls.Add($motorPane)
-$experimentPane=New-Object Windows.Forms.GroupBox; $experimentPane.Text='ENSAIO - comunicacao e marcadores'; $experimentPane.Location='840,85'; $experimentPane.Size='375,575'; $experimentPane.ForeColor=[Drawing.Color]::LightSkyBlue; $form.Controls.Add($experimentPane)
+$controlPane=New-Object Windows.Forms.GroupBox; $controlPane.Text='CONTROLE - o que voce quer provocar'; $controlPane.Location='20,85'; $controlPane.Size='340,565'; $controlPane.ForeColor=[Drawing.Color]::LightSkyBlue; $form.Controls.Add($controlPane)
+$motorPane=New-Object Windows.Forms.GroupBox; $motorPane.Text='MOTOR VIRTUAL - o que esta sendo produzido'; $motorPane.Location='375,85'; $motorPane.Size='450,565'; $motorPane.ForeColor=[Drawing.Color]::LightSkyBlue; $form.Controls.Add($motorPane)
+$experimentPane=New-Object Windows.Forms.GroupBox; $experimentPane.Text='ENSAIO - comunicacao e marcadores'; $experimentPane.Location='840,85'; $experimentPane.Size='375,565'; $experimentPane.ForeColor=[Drawing.Color]::LightSkyBlue; $form.Controls.Add($experimentPane)
 
 $script:activeSurface=$controlPane
 $fuelLabel=Add-Label 'Combustivel solicitado' 18 28 160
@@ -461,13 +492,14 @@ $quickAction=New-Object Windows.Forms.Button; $quickAction.Text='Acao'; $quickAc
 $quickAfter=New-Object Windows.Forms.Button; $quickAfter.Text='Depois'; $quickAfter.Location='300,250'; $quickAfter.Size='53,31'; $experimentPane.Controls.Add($quickAfter)
 $importButton=New-Object Windows.Forms.Button; $importButton.Text='Importar logs'; $importButton.Location='18,284'; $importButton.Size='150,29'; $experimentPane.Controls.Add($importButton)
 $replayButton=New-Object Windows.Forms.Button; $replayButton.Text='Loop importado'; $replayButton.Location='180,284'; $replayButton.Size='173,29'; $replayButton.Enabled=$false; $experimentPane.Controls.Add($replayButton)
-$timelineTitle=Add-Label 'Cronologia desta sessao' 18 322 320 22 (New-Object Drawing.Font('Segoe UI',10,[Drawing.FontStyle]::Bold))
-$timeline=Add-Label 'Sessao iniciando...' 18 350 335 90; $timeline.ForeColor=[Drawing.Color]::Silver
-$sessionLabel=Add-Label 'Sessao: preparando...' 18 455 335 46; $sessionLabel.ForeColor=[Drawing.Color]::DarkGray
-$openSessionButton=New-Object Windows.Forms.Button; $openSessionButton.Text='Abrir arquivos da sessao'; $openSessionButton.Location='18,510'; $openSessionButton.Size='165,31'; $experimentPane.Controls.Add($openSessionButton)
-$newSessionButton=New-Object Windows.Forms.Button; $newSessionButton.Text='Novo ensaio'; $newSessionButton.Location='190,510'; $newSessionButton.Size='163,31'; $experimentPane.Controls.Add($newSessionButton)
-$campaignButton=New-Object Windows.Forms.Button; $campaignButton.Text='Rodar 1.000 cenarios'; $campaignButton.Location='18,548'; $campaignButton.Size='200,31'; $experimentPane.Controls.Add($campaignButton)
-$stopCampaignButton=New-Object Windows.Forms.Button; $stopCampaignButton.Text='Parar campanha'; $stopCampaignButton.Location='225,548'; $stopCampaignButton.Size='128,31'; $stopCampaignButton.Enabled=$false; $experimentPane.Controls.Add($stopCampaignButton)
+$timelineTitle=Add-Label 'Cronologia desta sessao' 18 318 320 22 (New-Object Drawing.Font('Segoe UI',10,[Drawing.FontStyle]::Bold))
+$timeline=Add-Label 'Sessao iniciando...' 18 344 335 70; $timeline.ForeColor=[Drawing.Color]::Silver
+$sessionLabel=Add-Label 'Sessao: preparando...' 18 420 335 42; $sessionLabel.ForeColor=[Drawing.Color]::DarkGray
+$openSessionButton=New-Object Windows.Forms.Button; $openSessionButton.Text='Abrir arquivos da sessao'; $openSessionButton.Location='18,468'; $openSessionButton.Size='165,31'; $experimentPane.Controls.Add($openSessionButton)
+$newSessionButton=New-Object Windows.Forms.Button; $newSessionButton.Text='Novo ensaio'; $newSessionButton.Location='190,468'; $newSessionButton.Size='163,31'; $experimentPane.Controls.Add($newSessionButton)
+$campaignButton=New-Object Windows.Forms.Button; $campaignButton.Text='Rodar 1.000 cenarios'; $campaignButton.Location='18,504'; $campaignButton.Size='170,31'; $experimentPane.Controls.Add($campaignButton)
+$autoCalSessionButton=New-Object Windows.Forms.Button; $autoCalSessionButton.Text='Gerar sessao AutoCal'; $autoCalSessionButton.Location='193,504'; $autoCalSessionButton.Size='160,31'; $experimentPane.Controls.Add($autoCalSessionButton)
+$stopCampaignButton=New-Object Windows.Forms.Button; $stopCampaignButton.Text='Parar atividade'; $stopCampaignButton.Location='18,538'; $stopCampaignButton.Size='335,24'; $stopCampaignButton.Enabled=$false; $experimentPane.Controls.Add($stopCampaignButton)
 
 $script:activeSurface=$form
 $footer=Add-Label 'BANCADA   |   Cenarios e telemetria ficam nesta tela. Os detalhes tecnicos continuam registrados nos arquivos da sessao.' 20 675 1195 24; $footer.ForeColor=[Drawing.Color]::Gray
@@ -490,13 +522,18 @@ $quickAction.Add_Click({Add-QuickMarker 'Acao executada no ProgBase'})
 $quickAfter.Add_Click({Add-QuickMarker 'Depois da acao no ProgBase'})
 $importButton.Add_Click({ Import-ReplayFiles })
 $replayButton.Add_Click({ if($null -eq $script:replay){ Start-LogReplay; $replayButton.Text='Loop em andamento'; $campaignButton.Enabled=$false; $stopCampaignButton.Enabled=$true } })
-$newSessionButton.Add_Click({ Stop-ProgBaseCampaign 'nova-sessao'; Stop-LogReplay 'nova-sessao'; Write-SessionSummary; Start-NewSession; $status.Text='Novo ensaio iniciado.' })
+$newSessionButton.Add_Click({ Stop-ProgBaseCampaign 'nova-sessao'; Stop-LogReplay 'nova-sessao'; Stop-VirtualAutoCalSession 'nova-sessao'; Write-SessionSummary; Start-NewSession; $status.Text='Novo ensaio iniciado.' })
 $openSessionButton.Add_Click({ if(-not [string]::IsNullOrWhiteSpace($script:sessionRoot)){Start-Process explorer.exe -ArgumentList "`"$script:sessionRoot`""} })
-$campaignButton.Add_Click({ if($null -eq $script:campaign){ Stop-LogReplay 'inicio-campanha'; Start-ProgBaseCampaign; $campaignButton.Enabled=$false; $replayButton.Enabled=$false; $stopCampaignButton.Enabled=$true } })
-$stopCampaignButton.Add_Click({ Stop-ProgBaseCampaign 'operador'; Stop-LogReplay 'operador'; $campaignButton.Enabled=$true; $replayButton.Enabled=($null -ne $script:replayData); $replayButton.Text='Loop importado'; $stopCampaignButton.Enabled=$false })
+$campaignButton.Add_Click({ if($null -eq $script:campaign){ Stop-LogReplay 'inicio-campanha'; Stop-VirtualAutoCalSession 'inicio-campanha'; Start-ProgBaseCampaign; $campaignButton.Enabled=$false; $replayButton.Enabled=$false; $autoCalSessionButton.Enabled=$false; $stopCampaignButton.Enabled=$true } })
+$autoCalSessionButton.Add_Click({ if($null -eq $script:autoCalSession){ Start-VirtualAutoCalSession; $campaignButton.Enabled=$false; $replayButton.Enabled=$false; $autoCalSessionButton.Enabled=$false; $stopCampaignButton.Enabled=$true } })
+$stopCampaignButton.Add_Click({ Stop-ProgBaseCampaign 'operador'; Stop-LogReplay 'operador'; Stop-VirtualAutoCalSession 'operador'; $campaignButton.Enabled=$true; $replayButton.Enabled=($null -ne $script:replayData); $replayButton.Text='Loop importado'; $autoCalSessionButton.Enabled=$true; $stopCampaignButton.Enabled=$false })
 $timer=New-Object Windows.Forms.Timer; $timer.Interval=120
 $timer.Add_Tick({
-    if($null -ne $script:campaign){
+    if($null -ne $script:autoCalSession){
+        $state=New-AutoCalSessionState; Publish-State $state; $script:autoCalSession.index++
+        if(($script:autoCalSession.index % 12) -eq 0){Write-LabEvent @{type='autocal-session-progress'; completed=$script:autoCalSession.index; total=$script:autoCalSession.total; state=$state}}
+        if($script:autoCalSession.index -ge $script:autoCalSession.total){Stop-VirtualAutoCalSession 'concluida'; $campaignButton.Enabled=$true; $replayButton.Enabled=($null -ne $script:replayData); $autoCalSessionButton.Enabled=$true; $stopCampaignButton.Enabled=$false}
+    } elseif($null -ne $script:campaign){
         $state=New-CampaignState; Publish-State $state; $script:campaign.index++
         if(($script:campaign.index % 25) -eq 0){Write-LabEvent @{type='campaign-progress'; completed=$script:campaign.index; total=$script:campaign.total; state=$state}}
         if($script:campaign.index -ge $script:campaign.total){Stop-ProgBaseCampaign 'concluida'; $campaignButton.Enabled=$true; $stopCampaignButton.Enabled=$false}
@@ -520,7 +557,7 @@ $timer.Add_Tick({
     $lastAction.Text="$($protocol.last)`nOrigem: $($protocol.source)    Desconhecidos: $($protocol.unknown)"
     $events=@(Read-JsonLines $script:sessionEventsPath | Where-Object {$_.type -in @('session-start','profile','marker','engine-toggle')} | Select-Object -Last 4)
     $timeline.Text=if($events.Count -eq 0){'Nenhum evento ainda.'}else{(($events | ForEach-Object { "$([datetimeoffset]$_.timestamp | ForEach-Object { $_.ToLocalTime().ToString('HH:mm:ss') })  $($_.type): $($_.note)$($_.profile)" }) -join "`n")}
-    $sessionLabel.Text=if($null -ne $script:campaign){"Campanha: $($script:campaign.index) / $($script:campaign.total)`nSessao: $(Split-Path $script:sessionRoot -Leaf)"}elseif($null -ne $script:replay){"Replay: $($script:replay.published) estados | volta $($script:replay.cycles + 1)`nSessao: $(Split-Path $script:sessionRoot -Leaf)"}else{"Sessao: $(Split-Path $script:sessionRoot -Leaf)"}
+    $sessionLabel.Text=if($null -ne $script:autoCalSession){"AutoCal: $($script:autoCalSession.index) / $($script:autoCalSession.total)`nGasolina e GNV por faixa estavel"}elseif($null -ne $script:campaign){"Campanha: $($script:campaign.index) / $($script:campaign.total)`nSessao: $(Split-Path $script:sessionRoot -Leaf)"}elseif($null -ne $script:replay){"Replay: $($script:replay.published) estados | volta $($script:replay.cycles + 1)`nSessao: $(Split-Path $script:sessionRoot -Leaf)"}else{"Sessao: $(Split-Path $script:sessionRoot -Leaf)"}
     $elapsed=if($null -eq $script:sessionStartedAt){[TimeSpan]::Zero}else{([DateTime]::UtcNow-$script:sessionStartedAt)}; $elapsedLabel.Text=('Sessao: {0:hh\:mm\:ss}' -f $elapsed)
     $topStatus.Text=if($online){"● ECU virtual: ATIVA     $(if($protocol.transactions -gt 0){'● ProgBase: CONECTADO'}else{'■ ProgBase: AGUARDANDO'})"}else{'■ ECU virtual: OFFLINE'}
     $status.Text="Estado: $($state.behaviorState) | Acoplamento: $($controls.coupling.SelectedItem) | Comportamento: $($controls.stabilityMode.SelectedItem) | Publicacao #$($state.sequence)"
@@ -530,5 +567,5 @@ $form.Add_Shown({
     if($IniciarCampanha){ Start-ProgBaseCampaign; $campaignButton.Enabled=$false; $stopCampaignButton.Enabled=$true }
     $timer.Start()
 })
-$form.Add_FormClosed({Stop-ProgBaseCampaign 'janela-fechada'; Stop-LogReplay 'janela-fechada'; Write-LabEvent @{type='session-end'}; Write-SessionSummary; if($null -ne $script:engineProcess -and -not $script:engineProcess.HasExited){Stop-Process -Id $script:engineProcess.Id -Force -ErrorAction SilentlyContinue}})
+$form.Add_FormClosed({Stop-ProgBaseCampaign 'janela-fechada'; Stop-LogReplay 'janela-fechada'; Stop-VirtualAutoCalSession 'janela-fechada'; Write-LabEvent @{type='session-end'}; Write-SessionSummary; if($null -ne $script:engineProcess -and -not $script:engineProcess.HasExited){Stop-Process -Id $script:engineProcess.Id -Force -ErrorAction SilentlyContinue}})
 [void]$form.ShowDialog()

@@ -4,6 +4,8 @@ Abra somente `Iniciar Omegas Lab.cmd`.
 
 Com o ProgBase ja conectado, use **Rodar 1.000 cenarios** no painel `ENSAIO` — ou abra `Executar 1000 ensaios.cmd`. A campanha publica mil estados coerentes do modelo enquanto preserva a conexao atual ProgBase → ECU virtual. Ao final, `CAMPANHA_PROGBASE.md` mostra quais pedidos o ProgBase realmente fez em cada faixa de estados. Nenhuma acao fisica e envolvida: escritas, resets e AutoMatch experimental permanecem dentro da memoria da ECU virtual.
 
+Para assistir a formacao da tela de AutoCal como na imagem, use **Gerar sessao AutoCal**. O laboratorio executa 18 faixas em gasolina e 18 em GNV, mantendo seis leituras estaveis por faixa. A ECU virtual so comeca a contar depois de tres leituras consecutivas na mesma faixa; assim bolinhas, barras de aquisicao e curvas de retorno surgem progressivamente no ProgBase. Ao concluir, clique em `Manual automatch` no proprio ProgBase para ver a Curva K virtual ser atualizada pelo modelo experimental.
+
 ## Importar e repetir logs
 
 Use **Importar logs** para selecionar varias exportacoes `.zip`, `.jsonl`, `.json`, `.log` ou `.txt`. O laboratorio procura telemetrias estruturadas, normaliza os campos e cria um replay local em `Dados\Importacoes`. Depois clique em **Loop importado**: os estados importados passam a ser publicados em ordem e voltam ao inicio automaticamente, sem interromper o ProgBase conectado. Ao parar, o arquivo `REPLAY_LOGS_PROGBASE.md` mostra o que o ProgBase realmente pediu durante o replay.
