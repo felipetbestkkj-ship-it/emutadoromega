@@ -1,0 +1,525 @@
+param(
+    [string]$PipeName = 'omegas-ecu',
+    [ValidateSet('captured', 'idle-cng', 'stable-load', 'acceleration', 'cutoff', 'transition', 'interactive')]
+    [string]$Scenario = 'captured',
+    [string]$ScenarioFile = (Join-Path $PSScriptRoot '..\Capturas\estado-interativo.json'),
+    [string]$ProtocolGuide = (Join-Path $PSScriptRoot '..\Dados\GUIA_INDUSTRIAL_COMPLETO_AEB_OMEGAS_PROGBASE_DLL.md'),
+    [string]$LogPath = (Join-Path $PSScriptRoot '..\Capturas\omegas-mp48-ecu.log'),
+    [string]$SessionLogPath = '',
+    [string]$MemoryPath = '',
+    [switch]$SelfTest
+)
+
+$ErrorActionPreference = 'Stop'
+
+function Convert-HexToBytes([string]$Hex) {
+    if ([string]::IsNullOrWhiteSpace($Hex)) {
+        return [byte[]]::new(0)
+    }
+    $tokens = $Hex.Trim() -split '\s+'
+    return [byte[]]@($tokens | ForEach-Object { [Convert]::ToByte($_, 16) })
+}
+
+function Convert-BytesToHex([byte[]]$Bytes) {
+    if ($null -eq $Bytes -or $Bytes.Length -eq 0) {
+        return ''
+    }
+    return [BitConverter]::ToString($Bytes).Replace('-', ' ')
+}
+
+function Test-RequestChecksum([byte[]]$Bytes) {
+    if ($Bytes.Length -lt 3) {
+        return $false
+    }
+    $sum = 0
+    for ($i = 0; $i -lt $Bytes.Length - 1; $i++) {
+        $sum = ($sum + $Bytes[$i]) -band 0xFF
+    }
+    return $sum -eq $Bytes[-1]
+}
+
+function New-AckFrame([byte[]]$Payload = [byte[]]::new(0)) {
+    $frame = [Collections.Generic.List[byte]]::new()
+    $frame.Add(0x53)
+    $frame.Add([byte]$Payload.Length)
+    $frame.AddRange($Payload)
+    $checksum = 0
+    foreach ($value in $frame) {
+        $checksum = ($checksum + $value) -band 0xFF
+    }
+    $frame.Add([byte]$checksum)
+    return $frame.ToArray()
+}
+
+function Set-U16Le([byte[]]$Bytes, [int]$Offset, [int]$Value) {
+    $Bytes[$Offset] = [byte]($Value -band 0xFF)
+    $Bytes[$Offset + 1] = [byte](($Value -shr 8) -band 0xFF)
+}
+
+function Update-ResponseChecksum([byte[]]$Response) {
+    $checksum = 0
+    for ($i = 0; $i -lt $Response.Length - 1; $i++) {
+        $checksum = ($checksum + $Response[$i]) -band 0xFF
+    }
+    $Response[$Response.Length - 1] = [byte]$checksum
+}
+
+function Get-MapReadKey([int]$Row) {
+    $checksum = (0x2A + 0x54 + $Row) -band 0xFF
+    return ('2A 54 00 {0:X2} {1:X2}' -f $Row, $checksum)
+}
+
+function Initialize-VirtualMemory(
+    [Collections.Generic.Dictionary[string, byte[]]]$Responses,
+    [string]$Path
+) {
+    $memory = [ordered]@{ mul = [int[]]::new(30); map = @(); writeCount = 0; autoCalResetMask = 0; autoCalResetCount = 0 }
+    $mulResponse = $Responses['29 61 01 8B']
+    for ($index = 0; $index -lt 30; $index++) {
+        $memory.mul[$index] = [int]$mulResponse[2 + ($index * 2)] + ([int]$mulResponse[3 + ($index * 2)] * 256)
+    }
+    for ($row = 0; $row -lt 13; $row++) {
+        $response = $Responses[(Get-MapReadKey $row)]
+        $line = [int[]]::new(12)
+        for ($column = 0; $column -lt 12; $column++) { $line[$column] = $response[2 + $column] }
+        $memory.map += ,$line
+    }
+    if (-not [string]::IsNullOrWhiteSpace($Path) -and (Test-Path -LiteralPath $Path)) {
+        try {
+            $saved = Get-Content -LiteralPath $Path -Raw | ConvertFrom-Json
+            if ($saved.mul.Count -eq 30 -and $saved.map.Count -eq 13 -and (@($saved.map | ForEach-Object { $_.Count -eq 12 } | Where-Object { -not $_ }).Count -eq 0)) {
+                $memory.mul = [int[]]@($saved.mul | ForEach-Object { [int]$_ })
+                $memory.map = @()
+                foreach ($savedRow in $saved.map) {
+                    $memory.map += ,([int[]]@($savedRow | ForEach-Object { [int]$_ }))
+                }
+                $memory.writeCount = [int]$saved.writeCount
+                if ($null -ne $saved.autoCalResetMask) { $memory.autoCalResetMask = [int]$saved.autoCalResetMask }
+                if ($null -ne $saved.autoCalResetCount) { $memory.autoCalResetCount = [int]$saved.autoCalResetCount }
+            }
+        } catch {
+            Write-Log "virtual-memory-read-error=$($_.Exception.Message)"
+        }
+    }
+    return $memory
+}
+
+function Sync-VirtualMemoryToResponses([Collections.Generic.Dictionary[string, byte[]]]$Responses) {
+    $mulResponse = $Responses['29 61 01 8B']
+    for ($index = 0; $index -lt 30; $index++) {
+        $value = $script:VirtualMemory.mul[$index]
+        $mulResponse[2 + ($index * 2)] = [byte]($value -band 0xFF)
+        $mulResponse[3 + ($index * 2)] = [byte](($value -shr 8) -band 0xFF)
+    }
+    Update-ResponseChecksum $mulResponse
+    for ($row = 0; $row -lt 13; $row++) {
+        $response = $Responses[(Get-MapReadKey $row)]
+        for ($column = 0; $column -lt 12; $column++) { $response[2 + $column] = [byte]$script:VirtualMemory.map[$row][$column] }
+        Update-ResponseChecksum $response
+    }
+}
+
+function Save-VirtualMemory {
+    if ([string]::IsNullOrWhiteSpace($script:ResolvedMemoryPath)) { return }
+    try {
+        [IO.Directory]::CreateDirectory([IO.Path]::GetDirectoryName($script:ResolvedMemoryPath)) | Out-Null
+        $temp = "$script:ResolvedMemoryPath.tmp"
+        $script:VirtualMemory | ConvertTo-Json -Depth 4 | Set-Content -LiteralPath $temp -Encoding UTF8
+        Move-Item -LiteralPath $temp -Destination $script:ResolvedMemoryPath -Force
+    } catch {
+        Write-Log "virtual-memory-write-error=$($_.Exception.Message)"
+    }
+}
+
+function Apply-VirtualWrite([byte[]]$Request) {
+    if ($Request.Length -ne 7 -or $Request[0] -ne 0x14) { return $null }
+    if ($Request[1] -eq 0x61 -and $Request[2] -eq 0x01 -and $Request[3] -lt 30) {
+        $index = [int]$Request[3]
+        $value = [int]$Request[4] + ([int]$Request[5] * 256)
+        $script:VirtualMemory.mul[$index] = $value
+        $script:VirtualMemory.writeCount++
+        Sync-VirtualMemoryToResponses $responses
+        Save-VirtualMemory
+        return [pscustomobject]@{ target = 'MUL_ACT'; index = $index; value = $value }
+    }
+    if ($Request[1] -eq 0x54 -and $Request[2] -eq 0x00 -and $Request[3] -lt 13 -and $Request[4] -lt 12) {
+        $row = [int]$Request[3]; $column = [int]$Request[4]; $value = [int]$Request[5]
+        $script:VirtualMemory.map[$row][$column] = $value
+        $script:VirtualMemory.writeCount++
+        Sync-VirtualMemoryToResponses $responses
+        Save-VirtualMemory
+        return [pscustomobject]@{ target = 'MAP_K'; row = $row; column = $column; value = $value }
+    }
+    return $null
+}
+
+function Reset-ObservedVector([string]$Key) {
+    if (-not $responses.ContainsKey($Key)) { return }
+    $response = $responses[$Key]
+    for ($index = 2; $index -lt ($response.Length - 1); $index++) { $response[$index] = 0 }
+    Update-ResponseChecksum $response
+}
+
+function Apply-VirtualAutoCalReset([byte[]]$Request) {
+    # Comandos C2 documentados: 01=gasolina, 02=GNV, 04=total.
+    if ($Request.Length -ne 5 -or $Request[0] -ne 0x02 -or $Request[1] -ne 0x24 -or $Request[2] -ne 0x04) { return $null }
+    if (-not (Test-RequestChecksum $Request)) { return $null }
+    $mode = [int]$Request[3]
+    if ($mode -notin @(1, 2, 4)) { return $null }
+
+    if ($mode -in @(1, 4)) {
+        foreach ($key in @('29 5B 01 85','29 62 01 8C','29 63 01 8D','29 6F 01 99','29 8D 01 B7')) { Reset-ObservedVector $key }
+    }
+    if ($mode -in @(2, 4)) {
+        foreach ($key in @('29 5C 01 86','29 5D 01 87','29 5E 01 88','29 5F 01 89','29 60 01 8A','29 70 01 9A','29 8E 01 B8')) { Reset-ObservedVector $key }
+    }
+    if ($mode -eq 4) {
+        for ($index = 0; $index -lt 30; $index++) { $script:VirtualMemory.mul[$index] = 16384 }
+        Sync-VirtualMemoryToResponses $responses
+    }
+    $persistMask = if ($mode -eq 4) { 3 } else { $mode }
+    $script:VirtualMemory.autoCalResetMask = $script:VirtualMemory.autoCalResetMask -bor $persistMask
+    $script:VirtualMemory.autoCalResetCount++
+    Save-VirtualMemory
+    $label = switch ($mode) { 1 { 'gasolina' } 2 { 'GNV' } default { 'total' } }
+    return [pscustomobject]@{ target = 'AUTOCAL_RESET'; mode = $label; count = $script:VirtualMemory.autoCalResetCount }
+}
+
+function Apply-PersistedAutoCalReset {
+    $mask = [int]$script:VirtualMemory.autoCalResetMask
+    if (($mask -band 1) -ne 0) { foreach ($key in @('29 5B 01 85','29 62 01 8C','29 63 01 8D','29 6F 01 99','29 8D 01 B7')) { Reset-ObservedVector $key } }
+    if (($mask -band 2) -ne 0) { foreach ($key in @('29 5C 01 86','29 5D 01 87','29 5E 01 88','29 5F 01 89','29 60 01 8A','29 70 01 9A','29 8E 01 B8')) { Reset-ObservedVector $key } }
+}
+
+function New-ScenarioTelemetry([string]$Name, [int]$Tick) {
+    # MP48 payload layout is based on captured frames and the documented
+    # decoding offsets: rpm 0, gas 6, petrol 8, fuel 11, water 12,
+    # level 13, gas pressure 14, gas temperature 16, MAP 17.
+    $payload = [byte[]]::new(34)
+    $rpm = 850; $gas = 1600; $petrol = 1400; $fuel = 0x90
+    $water = 19; $level = 80; $pressure = 1600; $gasTemperature = 55; $map = 400
+    switch ($Name) {
+        'stable-load' {
+            $rpm = 2500; $gas = 2400; $petrol = 2100; $pressure = 1900; $map = 900
+        }
+        'acceleration' {
+            $phase = [Math]::Min($Tick, 16)
+            $rpm = 1400 + ($phase * 250)
+            $gas = 1500 + ($phase * 90)
+            $petrol = 1350 + ($phase * 80)
+            $pressure = 1850; $map = 450 + ($phase * 45)
+        }
+        'cutoff' {
+            $rpm = 3200; $gas = 0; $petrol = 180; $pressure = 1500; $map = 250
+        }
+        'transition' {
+            $rpm = 1800; $gas = 1200; $petrol = 1650; $fuel = 0x88; $pressure = 1750; $map = 550
+        }
+    }
+    Set-U16Le $payload 0 $rpm
+    Set-U16Le $payload 6 $gas
+    Set-U16Le $payload 8 $petrol
+    $payload[11] = [byte]$fuel
+    $payload[12] = [byte]$water
+    $payload[13] = [byte]$level
+    Set-U16Le $payload 14 $pressure
+    $payload[16] = [byte]$gasTemperature
+    Set-U16Le $payload 17 $map
+    Set-U16Le $payload 24 $gas
+    Set-U16Le $payload 28 $petrol
+    return New-AckFrame $payload
+}
+
+function New-InteractiveTelemetry([string]$Path) {
+    # Always read the latest published state. Depending only on the file time
+    # made a running laboratory appear frozen on systems whose timestamps do
+    # not advance between two quick atomic replacements.
+    try {
+        $latestState = Get-Content -LiteralPath $Path -Raw | ConvertFrom-Json
+        if ($null -ne $latestState) {
+            $script:InteractiveState = $latestState
+            $sequence = if ($null -ne $latestState.sequence) { [int64]$latestState.sequence } else { -1 }
+            if ($sequence -ne $script:InteractiveStateSequence) {
+                $script:InteractiveStateSequence = $sequence
+                Write-Log "interactive-state sequence=$sequence rpm=$($latestState.rpm) fuel=$($latestState.fuel)"
+            }
+        }
+    } catch {
+        # An atomic state replacement can leave a tiny read window. Keep the
+        # previous valid state; never pause serial telemetry for a UI write.
+        Write-Log "interactive-state-read-error=$($_.Exception.Message)"
+    }
+    $state = $script:InteractiveState
+    if ($null -eq $state) {
+        return New-ScenarioTelemetry 'idle-cng' 0
+    }
+    $payload = [byte[]]::new(34)
+    $rpm = [Math]::Max(0, [Math]::Min(9000, [int]$state.rpm))
+    $gas = [Math]::Max(0, [Math]::Min(19531, [int]([double]$state.gasMs / 0.00256)))
+    $petrol = [Math]::Max(0, [Math]::Min(15625, [int]([double]$state.petrolMs / 0.00256)))
+    $fuel = switch ([string]$state.fuel) { 'PETROL' { 0x80 } 'TRANSITION' { 0x88 } default { 0x90 } }
+    $water = [Math]::Max(0, [Math]::Min(255, 109 - [int]$state.waterC))
+    $gasTemperature = [Math]::Max(0, [Math]::Min(255, 20 + [int]$state.gasC))
+    $pressure = [Math]::Max(0, [Math]::Min(4000, [int]([double]$state.pressureBar * 800)))
+    $map = [Math]::Max(0, [Math]::Min(2500, [int]([double]$state.mapBar * 1000)))
+    $level = [Math]::Max(0, [Math]::Min(255, 255 - [int](([double]$state.levelPercent * 255) / 100)))
+    Set-U16Le $payload 0 $rpm
+    Set-U16Le $payload 6 $gas
+    Set-U16Le $payload 8 $petrol
+    $payload[11] = [byte]$fuel
+    $payload[12] = [byte]$water
+    $payload[13] = [byte]$level
+    Set-U16Le $payload 14 $pressure
+    $payload[16] = [byte]$gasTemperature
+    Set-U16Le $payload 17 $map
+    $payload[19] = [byte]([Math]::Max(0, [Math]::Min(255, [int]$state.dynamicCorrection)))
+    Set-U16Le $payload 24 $gas
+    Set-U16Le $payload 28 $petrol
+    return New-AckFrame $payload
+}
+
+function Import-ObservedResponses([string]$Path) {
+    $responses = [Collections.Generic.Dictionary[string, byte[]]]::new([StringComparer]::OrdinalIgnoreCase)
+    $linePattern = '^\|\s*((?:[0-9A-Fa-f]{2}\s+)+[0-9A-Fa-f]{2})\s*\|.*?\|\s*((?:53|CA|96)(?:\s+[0-9A-Fa-f]{2})+)\s*\|'
+    foreach ($line in [IO.File]::ReadLines([IO.Path]::GetFullPath($Path))) {
+        $match = [regex]::Match($line, $linePattern)
+        if (-not $match.Success) {
+            continue
+        }
+        $request = ($match.Groups[1].Value.Trim() -replace '\s+', ' ').ToUpperInvariant()
+        $response = Convert-HexToBytes $match.Groups[2].Value
+        if ((Test-RequestChecksum $response) -and -not $responses.ContainsKey($request)) {
+            $responses.Add($request, $response)
+        }
+    }
+
+    # These session frames are the minimum required to establish a real MP48 session.
+    $responses['00 02 02'] = Convert-HexToBytes '53 04 FE 4F 45 0B F4'
+    $responses['01 00 3A 3B'] = Convert-HexToBytes '53 00 53'
+    $responses['00 25 25'] = Convert-HexToBytes '53 01 02 56'
+    $responses['00 01 01'] = Convert-HexToBytes '53 00 53'
+    # Optional page selector: the real ECU reports this page as unavailable.
+    $responses['01 04 54 59'] = Convert-HexToBytes 'CA 01 10 DB'
+    $responses['48 08 50'] = Convert-HexToBytes 'CA 01 10 DB'
+
+    return $responses
+}
+
+function Get-NextRequest(
+    [Collections.Generic.List[byte]]$Buffer,
+    [Collections.Generic.Dictionary[string, byte[]]]$Responses
+) {
+    # A standalone 00 is the documented wake byte. If init follows immediately,
+    # the stream begins 00 00 02 02; discard only the first wake byte.
+    while ($Buffer.Count -ge 2 -and $Buffer[0] -eq 0x00 -and $Buffer[1] -eq 0x00) {
+        $Buffer.RemoveAt(0)
+    }
+    if ($Buffer.Count -lt 3) {
+        return $null
+    }
+
+    # Prefer an observed complete frame over a shorter prefix that happens to
+    # have a coincidental checksum (for example 0A 1B 00 25 4A). Candidates
+    # are indexed once at startup; converting every one of 773 commands here
+    # delayed replies long enough for Omegas to retransmit map rows.
+    $candidates = $script:RequestCandidates[[int]$Buffer[0]]
+    foreach ($candidate in $candidates) {
+        if ($candidate.Bytes.Length -gt $Buffer.Count) {
+            continue
+        }
+        $matches = $true
+        for ($i = 0; $i -lt $candidate.Bytes.Length; $i++) {
+            if ($Buffer[$i] -ne $candidate.Bytes[$i]) {
+                $matches = $false
+                break
+            }
+        }
+        if ($matches) {
+            $Buffer.RemoveRange(0, $candidate.Bytes.Length)
+            return $candidate.Bytes
+        }
+    }
+
+    $maxLength = [Math]::Min($Buffer.Count, 260)
+    for ($length = 3; $length -le $maxLength; $length++) {
+        $candidate = [byte[]]$Buffer.GetRange(0, $length).ToArray()
+        $key = Convert-BytesToHex $candidate
+        if ($Responses.ContainsKey($key) -or (Test-RequestChecksum $candidate)) {
+            $Buffer.RemoveRange(0, $length)
+            return $candidate
+        }
+    }
+    return $null
+}
+
+function Write-Log([string]$Message) {
+    $timestamp = [DateTimeOffset]::Now.ToString('yyyy-MM-ddTHH:mm:ss.fffzzz')
+    [IO.File]::AppendAllText($script:ResolvedLogPath, "$timestamp $Message$([Environment]::NewLine)")
+}
+
+function Write-SessionEvent([hashtable]$Event) {
+    if ([string]::IsNullOrWhiteSpace($script:ResolvedSessionLogPath)) {
+        return
+    }
+    $Event.timestamp = [DateTimeOffset]::Now.ToString('o')
+    [IO.File]::AppendAllText(
+        $script:ResolvedSessionLogPath,
+        (($Event | ConvertTo-Json -Compress -Depth 4) + [Environment]::NewLine),
+        [Text.Encoding]::UTF8
+    )
+}
+
+$responses = Import-ObservedResponses $ProtocolGuide
+$script:ResolvedMemoryPath = if ([string]::IsNullOrWhiteSpace($MemoryPath)) { '' } else { [IO.Path]::GetFullPath($MemoryPath) }
+$script:VirtualMemory = Initialize-VirtualMemory $responses $script:ResolvedMemoryPath
+Sync-VirtualMemoryToResponses $responses
+Apply-PersistedAutoCalReset
+$script:ScenarioTick = 0
+$script:InteractiveState = $null
+$script:InteractiveStateStamp = $null
+$script:InteractiveStateSequence = -1
+$script:RequestCandidates = @{}
+foreach ($responseKey in $responses.Keys) {
+    $requestBytes = Convert-HexToBytes $responseKey
+    $bucket = [int]$requestBytes[0]
+    if (-not $script:RequestCandidates.ContainsKey($bucket)) {
+        $script:RequestCandidates[$bucket] = [Collections.Generic.List[object]]::new()
+    }
+    $script:RequestCandidates[$bucket].Add([pscustomobject]@{ Bytes = $requestBytes })
+}
+foreach ($bucket in @($script:RequestCandidates.Keys)) {
+    $script:RequestCandidates[$bucket] = [Collections.Generic.List[object]]@(
+        $script:RequestCandidates[$bucket] | Sort-Object { $_.Bytes.Length } -Descending
+    )
+}
+
+if ($SelfTest) {
+    $required = @('00 02 02', '01 00 3A 3B', '00 25 25', '48 01 49')
+    foreach ($request in $required) {
+        if (-not $responses.ContainsKey($request)) {
+            throw "Resposta obrigatoria ausente: $request"
+        }
+    }
+    foreach ($entry in $responses.GetEnumerator()) {
+        if ($entry.Value.Length -lt 3) {
+            throw "Resposta curta para $($entry.Key)"
+        }
+        $expected = 0
+        for ($i = 0; $i -lt $entry.Value.Length - 1; $i++) {
+            $expected = ($expected + $entry.Value[$i]) -band 0xFF
+        }
+        if ($expected -ne $entry.Value[-1]) {
+            throw "Checksum de resposta invalido para $($entry.Key)"
+        }
+    }
+    $testBuffer = [Collections.Generic.List[byte]]::new()
+    foreach ($value in (Convert-HexToBytes '00 00 02')) {
+        $testBuffer.Add($value)
+    }
+    if ($null -ne (Get-NextRequest $testBuffer $responses)) {
+        throw 'Parser aceitou quadro fragmentado'
+    }
+    $testBuffer.Add(0x02)
+    $parsed = Get-NextRequest $testBuffer $responses
+    if ((Convert-BytesToHex $parsed) -ne '00 02 02') {
+        throw 'Parser nao removeu wake byte corretamente'
+    }
+    $petrolCountBefore = [byte[]]$responses['29 5B 01 85'].Clone()
+    $resetPetrol = Apply-VirtualAutoCalReset (Convert-HexToBytes '02 24 04 01 2B')
+    if ($null -eq $resetPetrol -or $resetPetrol.target -ne 'AUTOCAL_RESET' -or $resetPetrol.mode -ne 'gasolina') {
+        throw 'Reset virtual de gasolina nao foi reconhecido'
+    }
+    $petrolCountAfter = $responses['29 5B 01 85']
+    if ((@($petrolCountBefore[2..($petrolCountBefore.Length - 2)] | Where-Object { $_ -ne 0 }).Count -eq 0) -or (@($petrolCountAfter[2..($petrolCountAfter.Length - 2)] | Where-Object { $_ -ne 0 }).Count -ne 0)) {
+        throw 'Reset virtual de gasolina nao limpou o buffer observado'
+    }
+    $resetTotal = Apply-VirtualAutoCalReset (Convert-HexToBytes '02 24 04 04 2E')
+    if ($null -eq $resetTotal -or $resetTotal.mode -ne 'total' -or (@($script:VirtualMemory.mul | Where-Object { $_ -ne 16384 }).Count -ne 0)) {
+        throw 'Reset virtual total nao restaurou a Curva K para 1,000'
+    }
+    "SELF_TEST_OK responses=$($responses.Count) telemetry=$((Convert-BytesToHex $responses['48 01 49']))"
+    exit 0
+}
+
+$script:ResolvedLogPath = [IO.Path]::GetFullPath($LogPath)
+[IO.Directory]::CreateDirectory([IO.Path]::GetDirectoryName($script:ResolvedLogPath)) | Out-Null
+$script:ResolvedSessionLogPath = if ([string]::IsNullOrWhiteSpace($SessionLogPath)) { '' } else { [IO.Path]::GetFullPath($SessionLogPath) }
+if (-not [string]::IsNullOrWhiteSpace($script:ResolvedSessionLogPath)) {
+    [IO.Directory]::CreateDirectory([IO.Path]::GetDirectoryName($script:ResolvedSessionLogPath)) | Out-Null
+}
+Write-Log "emulator-start pipe=\\.\pipe\$PipeName scenario=$Scenario responses=$($responses.Count)"
+Write-SessionEvent @{ type = 'emulator-start'; pipe = $PipeName; scenario = $Scenario; observedResponses = $responses.Count; virtualWriteCount = $script:VirtualMemory.writeCount }
+
+while ($true) {
+    $pipe = [IO.Pipes.NamedPipeServerStream]::new(
+        $PipeName,
+        [IO.Pipes.PipeDirection]::InOut,
+        1,
+        [IO.Pipes.PipeTransmissionMode]::Byte,
+        [IO.Pipes.PipeOptions]::WriteThrough,
+        4096,
+        4096
+    )
+    try {
+        $pipe.WaitForConnection()
+        Write-Log 'connected'
+        Write-SessionEvent @{ type = 'connection'; state = 'connected' }
+        $buffer = [Collections.Generic.List[byte]]::new()
+        $readBuffer = [byte[]]::new(4096)
+
+        while ($pipe.IsConnected) {
+            $count = $pipe.Read($readBuffer, 0, $readBuffer.Length)
+            if ($count -le 0) {
+                break
+            }
+            $buffer.AddRange([byte[]]$readBuffer[0..($count - 1)])
+            Write-Log "rx-chunk length=$count hex=$(Convert-BytesToHex ([byte[]]$readBuffer[0..($count - 1)]))"
+
+            while ($true) {
+                $request = Get-NextRequest $buffer $responses
+                if ($null -eq $request) {
+                    break
+                }
+                $requestKey = Convert-BytesToHex $request
+                $virtualWrite = Apply-VirtualWrite $request
+                if ($null -eq $virtualWrite) { $virtualWrite = Apply-VirtualAutoCalReset $request }
+                if ($null -ne $virtualWrite) {
+                    $response = New-AckFrame
+                    $source = if ($virtualWrite.target -eq 'AUTOCAL_RESET') { 'virtual-autocal-reset' } else { 'virtual-write' }
+                } elseif ($requestKey -eq '48 01 49' -and $Scenario -ne 'captured') {
+                    $script:ScenarioTick++
+                    $response = if ($Scenario -eq 'interactive') { New-InteractiveTelemetry $ScenarioFile } else { New-ScenarioTelemetry $Scenario $script:ScenarioTick }
+                    $source = "scenario-$Scenario"
+                } elseif ($responses.ContainsKey($requestKey)) {
+                    $response = $responses[$requestKey]
+                    $source = 'observed'
+                } else {
+                    $response = New-AckFrame
+                    $source = 'generic-ack'
+                }
+
+                # The physical Landi/AEB interface echoes the complete request first.
+                $pipe.Write($request, 0, $request.Length)
+                $pipe.Write($response, 0, $response.Length)
+                $pipe.Flush()
+                Write-Log "transaction request=$requestKey source=$source response=$(Convert-BytesToHex $response)"
+                $event = @{ type = 'transaction'; request = $requestKey; source = $source; response = (Convert-BytesToHex $response); scenario = $Scenario }
+                if ($null -ne $virtualWrite) { $event.virtualWrite = $virtualWrite }
+                if ($Scenario -eq 'interactive' -and $null -ne $script:InteractiveState) {
+                    $event.state = $script:InteractiveState
+                    $event.stateSequence = $script:InteractiveStateSequence
+                }
+                Write-SessionEvent $event
+            }
+        }
+    }
+    catch {
+        Write-Log "error=$($_.Exception.Message)"
+    }
+    finally {
+        $pipe.Dispose()
+        Write-Log 'disconnected'
+        Write-SessionEvent @{ type = 'connection'; state = 'disconnected' }
+    }
+    Start-Sleep -Milliseconds 250
+}

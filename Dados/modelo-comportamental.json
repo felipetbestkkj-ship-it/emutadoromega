@@ -1,0 +1,4435 @@
+{
+  "schema": "omegas-behaviour-v1",
+  "source": "aggregated-patterns-no-replay",
+  "sampleCount": 42915,
+  "buckets": [
+    {
+      "fuel": "CNG",
+      "state": "CRUISE",
+      "rpmBin": 3,
+      "loadBin": 2,
+      "count": 243,
+      "values": {
+        "rpm": {
+          "p10": 2289.0,
+          "median": 2531.0,
+          "p90": 2844.0
+        },
+        "load_bar": {
+          "p10": 0.403,
+          "median": 0.482,
+          "p90": 0.531
+        },
+        "petrol_ms": {
+          "p10": 3.1104,
+          "median": 3.81696,
+          "p90": 4.544
+        },
+        "gas_ms_diagnostic": {
+          "p10": 6.75584,
+          "median": 8.07168,
+          "p90": 9.59232
+        },
+        "gas_pressure_abs_bar": {
+          "p10": 2.22,
+          "median": 2.31529,
+          "p90": 2.36196
+        },
+        "pressure_diff_bar": {
+          "p10": 1.743,
+          "median": 1.83925,
+          "p90": 1.92465
+        },
+        "water_c": {
+          "p10": 60.0,
+          "median": 71.0,
+          "p90": 76.0
+        },
+        "gas_c": {
+          "p10": 41.0,
+          "median": 68.0,
+          "p90": 86.0
+        },
+        "dynamic_correction": {
+          "p10": 217.0,
+          "median": 222.0,
+          "p90": 223.0
+        }
+      }
+    },
+    {
+      "fuel": "CNG",
+      "state": "CRUISE",
+      "rpmBin": 3,
+      "loadBin": 1,
+      "count": 312,
+      "values": {
+        "rpm": {
+          "p10": 2286.0,
+          "median": 2510.0,
+          "p90": 2843.0
+        },
+        "load_bar": {
+          "p10": 0.217,
+          "median": 0.276,
+          "p90": 0.384
+        },
+        "petrol_ms": {
+          "p10": 1.65888,
+          "median": 2.44992,
+          "p90": 3.19744
+        },
+        "gas_ms_diagnostic": {
+          "p10": 3.63776,
+          "median": 5.26336,
+          "p90": 6.80192
+        },
+        "gas_pressure_abs_bar": {
+          "p10": 2.3175,
+          "median": 2.36275,
+          "p90": 2.41412
+        },
+        "pressure_diff_bar": {
+          "p10": 1.961,
+          "median": 2.07361,
+          "p90": 2.1855
+        },
+        "water_c": {
+          "p10": 60.0,
+          "median": 70.0,
+          "p90": 77.0
+        },
+        "gas_c": {
+          "p10": 63.0,
+          "median": 76.0,
+          "p90": 104.0
+        },
+        "dynamic_correction": {
+          "p10": 219.0,
+          "median": 223.0,
+          "p90": 224.0
+        }
+      }
+    },
+    {
+      "fuel": "CNG",
+      "state": "CRUISE",
+      "rpmBin": 2,
+      "loadBin": 1,
+      "count": 1136,
+      "values": {
+        "rpm": {
+          "p10": 1575.0,
+          "median": 1806.0,
+          "p90": 2145.0
+        },
+        "load_bar": {
+          "p10": 0.227,
+          "median": 0.345,
+          "p90": 0.394
+        },
+        "petrol_ms": {
+          "p10": 1.84576,
+          "median": 2.94656,
+          "p90": 3.6224
+        },
+        "gas_ms_diagnostic": {
+          "p10": 3.9424,
+          "median": 6.4384,
+          "p90": 8.09472
+        },
+        "gas_pressure_abs_bar": {
+          "p10": 2.22,
+          "median": 2.33125,
+          "p90": 2.42235
+        },
+        "pressure_diff_bar": {
+          "p10": 1.83225,
+          "median": 1.99147,
+          "p90": 2.16986
+        },
+        "water_c": {
+          "p10": 60.0,
+          "median": 71.0,
+          "p90": 78.0
+        },
+        "gas_c": {
+          "p10": 37.0,
+          "median": 69.0,
+          "p90": 89.0
+        },
+        "dynamic_correction": {
+          "p10": 219.0,
+          "median": 223.0,
+          "p90": 224.0
+        }
+      }
+    },
+    {
+      "fuel": "CNG",
+      "state": "CRUISE",
+      "rpmBin": 2,
+      "loadBin": 0,
+      "count": 90,
+      "values": {
+        "rpm": {
+          "p10": 1540.0,
+          "median": 1874.0,
+          "p90": 2169.0
+        },
+        "load_bar": {
+          "p10": 0.178,
+          "median": 0.188,
+          "p90": 0.198
+        },
+        "petrol_ms": {
+          "p10": 1.24416,
+          "median": 1.57952,
+          "p90": 2.06592
+        },
+        "gas_ms_diagnostic": {
+          "p10": 2.39104,
+          "median": 3.4176,
+          "p90": 4.19584
+        },
+        "gas_pressure_abs_bar": {
+          "p10": 2.35765,
+          "median": 2.4075,
+          "p90": 2.74667
+        },
+        "pressure_diff_bar": {
+          "p10": 2.1669,
+          "median": 2.2195,
+          "p90": 2.55867
+        },
+        "water_c": {
+          "p10": 60.0,
+          "median": 68.0,
+          "p90": 76.0
+        },
+        "gas_c": {
+          "p10": 67.0,
+          "median": 70.0,
+          "p90": 115.0
+        },
+        "dynamic_correction": {
+          "p10": 220.0,
+          "median": 223.0,
+          "p90": 223.0
+        }
+      }
+    },
+    {
+      "fuel": "CNG",
+      "state": "ACCEL",
+      "rpmBin": 2,
+      "loadBin": 4,
+      "count": 334,
+      "values": {
+        "rpm": {
+          "p10": 1622.0,
+          "median": 2015.0,
+          "p90": 2202.0
+        },
+        "load_bar": {
+          "p10": 0.815,
+          "median": 0.874,
+          "p90": 0.972
+        },
+        "petrol_ms": {
+          "p10": 8.01536,
+          "median": 10.91328,
+          "p90": 14.44352
+        },
+        "gas_ms_diagnostic": {
+          "p10": 15.43424,
+          "median": 20.15488,
+          "p90": 27.5584
+        },
+        "gas_pressure_abs_bar": {
+          "p10": 2.19875,
+          "median": 2.28275,
+          "p90": 2.31961
+        },
+        "pressure_diff_bar": {
+          "p10": 1.26675,
+          "median": 1.39522,
+          "p90": 1.4952
+        },
+        "water_c": {
+          "p10": 52.0,
+          "median": 72.0,
+          "p90": 78.0
+        },
+        "gas_c": {
+          "p10": 66.0,
+          "median": 79.0,
+          "p90": 93.0
+        },
+        "dynamic_correction": {
+          "p10": 218.0,
+          "median": 222.0,
+          "p90": 224.0
+        }
+      }
+    },
+    {
+      "fuel": "CNG",
+      "state": "ACCEL",
+      "rpmBin": 3,
+      "loadBin": 3,
+      "count": 272,
+      "values": {
+        "rpm": {
+          "p10": 2309.0,
+          "median": 2537.0,
+          "p90": 2846.0
+        },
+        "load_bar": {
+          "p10": 0.717,
+          "median": 0.756,
+          "p90": 0.796
+        },
+        "petrol_ms": {
+          "p10": 6.68672,
+          "median": 7.85664,
+          "p90": 9.30304
+        },
+        "gas_ms_diagnostic": {
+          "p10": 13.2992,
+          "median": 15.30624,
+          "p90": 18.09664
+        },
+        "gas_pressure_abs_bar": {
+          "p10": 2.19875,
+          "median": 2.28824,
+          "p90": 2.33
+        },
+        "pressure_diff_bar": {
+          "p10": 1.443,
+          "median": 1.52175,
+          "p90": 1.58986
+        },
+        "water_c": {
+          "p10": 50.0,
+          "median": 69.0,
+          "p90": 77.0
+        },
+        "gas_c": {
+          "p10": 65.0,
+          "median": 76.0,
+          "p90": 93.0
+        },
+        "dynamic_correction": {
+          "p10": 217.0,
+          "median": 221.0,
+          "p90": 223.0
+        }
+      }
+    },
+    {
+      "fuel": "CNG",
+      "state": "ACCEL",
+      "rpmBin": 3,
+      "loadBin": 4,
+      "count": 546,
+      "values": {
+        "rpm": {
+          "p10": 2310.0,
+          "median": 2574.0,
+          "p90": 2926.0
+        },
+        "load_bar": {
+          "p10": 0.815,
+          "median": 0.864,
+          "p90": 0.972
+        },
+        "petrol_ms": {
+          "p10": 8.77824,
+          "median": 10.752,
+          "p90": 12.992
+        },
+        "gas_ms_diagnostic": {
+          "p10": 16.97792,
+          "median": 20.36736,
+          "p90": 24.34048
+        },
+        "gas_pressure_abs_bar": {
+          "p10": 2.16375,
+          "median": 2.2698,
+          "p90": 2.31569
+        },
+        "pressure_diff_bar": {
+          "p10": 1.267,
+          "median": 1.386,
+          "p90": 1.47853
+        },
+        "water_c": {
+          "p10": 52.0,
+          "median": 69.0,
+          "p90": 78.0
+        },
+        "gas_c": {
+          "p10": 64.0,
+          "median": 78.0,
+          "p90": 104.0
+        },
+        "dynamic_correction": {
+          "p10": 217.0,
+          "median": 221.0,
+          "p90": 223.0
+        }
+      }
+    },
+    {
+      "fuel": "CNG",
+      "state": "CRUISE",
+      "rpmBin": 1,
+      "loadBin": 0,
+      "count": 31,
+      "values": {
+        "rpm": {
+          "p10": 1384.0,
+          "median": 1463.0,
+          "p90": 1489.0
+        },
+        "load_bar": {
+          "p10": 0.168,
+          "median": 0.198,
+          "p90": 0.198
+        },
+        "petrol_ms": {
+          "p10": 1.088,
+          "median": 1.41824,
+          "p90": 2.05056
+        },
+        "gas_ms_diagnostic": {
+          "p10": 2.48832,
+          "median": 2.816,
+          "p90": 4.37504
+        },
+        "gas_pressure_abs_bar": {
+          "p10": 2.30431,
+          "median": 2.32745,
+          "p90": 2.47875
+        },
+        "pressure_diff_bar": {
+          "p10": 2.10631,
+          "median": 2.15945,
+          "p90": 2.29075
+        },
+        "water_c": {
+          "p10": 62.0,
+          "median": 76.0,
+          "p90": 77.0
+        },
+        "gas_c": {
+          "p10": 67.0,
+          "median": 83.0,
+          "p90": 91.0
+        },
+        "dynamic_correction": {
+          "p10": 219.0,
+          "median": 223.0,
+          "p90": 224.0
+        }
+      }
+    },
+    {
+      "fuel": "CNG",
+      "state": "CRUISE",
+      "rpmBin": 1,
+      "loadBin": 1,
+      "count": 451,
+      "values": {
+        "rpm": {
+          "p10": 867.0,
+          "median": 1335.0,
+          "p90": 1468.0
+        },
+        "load_bar": {
+          "p10": 0.237,
+          "median": 0.354,
+          "p90": 0.394
+        },
+        "petrol_ms": {
+          "p10": 2.29888,
+          "median": 3.54816,
+          "p90": 4.8384
+        },
+        "gas_ms_diagnostic": {
+          "p10": 4.86144,
+          "median": 7.6544,
+          "p90": 10.87232
+        },
+        "gas_pressure_abs_bar": {
+          "p10": 2.21125,
+          "median": 2.34375,
+          "p90": 2.40941
+        },
+        "pressure_diff_bar": {
+          "p10": 1.83225,
+          "median": 1.98365,
+          "p90": 2.15047
+        },
+        "water_c": {
+          "p10": 60.0,
+          "median": 71.0,
+          "p90": 77.0
+        },
+        "gas_c": {
+          "p10": 41.0,
+          "median": 78.0,
+          "p90": 91.0
+        },
+        "dynamic_correction": {
+          "p10": 218.0,
+          "median": 223.0,
+          "p90": 224.0
+        }
+      }
+    },
+    {
+      "fuel": "CNG",
+      "state": "IDLE",
+      "rpmBin": 1,
+      "loadBin": 1,
+      "count": 561,
+      "values": {
+        "rpm": {
+          "p10": 843.0,
+          "median": 1111.0,
+          "p90": 1261.0
+        },
+        "load_bar": {
+          "p10": 0.256,
+          "median": 0.345,
+          "p90": 0.374
+        },
+        "petrol_ms": {
+          "p10": 2.5216,
+          "median": 3.5328,
+          "p90": 4.4928
+        },
+        "gas_ms_diagnostic": {
+          "p10": 5.57824,
+          "median": 7.72608,
+          "p90": 10.46528
+        },
+        "gas_pressure_abs_bar": {
+          "p10": 2.2025,
+          "median": 2.33625,
+          "p90": 2.4098
+        },
+        "pressure_diff_bar": {
+          "p10": 1.86375,
+          "median": 1.995,
+          "p90": 2.10875
+        },
+        "water_c": {
+          "p10": 60.0,
+          "median": 71.0,
+          "p90": 80.0
+        },
+        "gas_c": {
+          "p10": 41.0,
+          "median": 78.0,
+          "p90": 90.0
+        },
+        "dynamic_correction": {
+          "p10": 220.0,
+          "median": 223.0,
+          "p90": 224.0
+        }
+      }
+    },
+    {
+      "fuel": "CNG",
+      "state": "CRUISE",
+      "rpmBin": 1,
+      "loadBin": 2,
+      "count": 21536,
+      "values": {
+        "rpm": {
+          "p10": 866.0,
+          "median": 871.0,
+          "p90": 877.0
+        },
+        "load_bar": {
+          "p10": 0.443,
+          "median": 0.452,
+          "p90": 0.482
+        },
+        "petrol_ms": {
+          "p10": 4.27776,
+          "median": 4.74112,
+          "p90": 5.06368
+        },
+        "gas_ms_diagnostic": {
+          "p10": 9.3952,
+          "median": 11.08736,
+          "p90": 11.59168
+        },
+        "gas_pressure_abs_bar": {
+          "p10": 2.21125,
+          "median": 2.2925,
+          "p90": 2.34784
+        },
+        "pressure_diff_bar": {
+          "p10": 1.758,
+          "median": 1.823,
+          "p90": 1.89818
+        },
+        "water_c": {
+          "p10": 60.0,
+          "median": 71.0,
+          "p90": 77.0
+        },
+        "gas_c": {
+          "p10": 37.0,
+          "median": 53.0,
+          "p90": 87.0
+        },
+        "dynamic_correction": {
+          "p10": 219.0,
+          "median": 223.0,
+          "p90": 225.0
+        }
+      }
+    },
+    {
+      "fuel": "CNG",
+      "state": "LOAD",
+      "rpmBin": 1,
+      "loadBin": 2,
+      "count": 316,
+      "values": {
+        "rpm": {
+          "p10": 873.0,
+          "median": 925.0,
+          "p90": 1283.0
+        },
+        "load_bar": {
+          "p10": 0.55,
+          "median": 0.56,
+          "p90": 0.59
+        },
+        "petrol_ms": {
+          "p10": 4.8256,
+          "median": 5.78048,
+          "p90": 7.6032
+        },
+        "gas_ms_diagnostic": {
+          "p10": 9.87136,
+          "median": 12.14464,
+          "p90": 16.18432
+        },
+        "gas_pressure_abs_bar": {
+          "p10": 2.2675,
+          "median": 2.32627,
+          "p90": 2.36353
+        },
+        "pressure_diff_bar": {
+          "p10": 1.68875,
+          "median": 1.75843,
+          "p90": 1.79882
+        },
+        "water_c": {
+          "p10": 61.0,
+          "median": 75.0,
+          "p90": 77.0
+        },
+        "gas_c": {
+          "p10": 49.0,
+          "median": 82.0,
+          "p90": 93.0
+        },
+        "dynamic_correction": {
+          "p10": 218.0,
+          "median": 223.0,
+          "p90": 224.0
+        }
+      }
+    },
+    {
+      "fuel": "CNG",
+      "state": "ACCEL",
+      "rpmBin": 1,
+      "loadBin": 4,
+      "count": 224,
+      "values": {
+        "rpm": {
+          "p10": 828.0,
+          "median": 1048.0,
+          "p90": 1400.0
+        },
+        "load_bar": {
+          "p10": 0.825,
+          "median": 0.913,
+          "p90": 0.982
+        },
+        "petrol_ms": {
+          "p10": 8.6528,
+          "median": 13.77024,
+          "p90": 16.97792
+        },
+        "gas_ms_diagnostic": {
+          "p10": 16.49408,
+          "median": 25.5104,
+          "p90": 30.144
+        },
+        "gas_pressure_abs_bar": {
+          "p10": 2.1775,
+          "median": 2.28784,
+          "p90": 2.325
+        },
+        "pressure_diff_bar": {
+          "p10": 1.21925,
+          "median": 1.34957,
+          "p90": 1.4999
+        },
+        "water_c": {
+          "p10": 46.0,
+          "median": 71.0,
+          "p90": 77.0
+        },
+        "gas_c": {
+          "p10": 49.0,
+          "median": 82.0,
+          "p90": 92.0
+        },
+        "dynamic_correction": {
+          "p10": 218.0,
+          "median": 223.0,
+          "p90": 224.0
+        }
+      }
+    },
+    {
+      "fuel": "CNG",
+      "state": "LOAD",
+      "rpmBin": 2,
+      "loadBin": 3,
+      "count": 384,
+      "values": {
+        "rpm": {
+          "p10": 1543.0,
+          "median": 1875.0,
+          "p90": 2121.0
+        },
+        "load_bar": {
+          "p10": 0.619,
+          "median": 0.658,
+          "p90": 0.688
+        },
+        "petrol_ms": {
+          "p10": 4.6208,
+          "median": 5.46304,
+          "p90": 7.21152
+        },
+        "gas_ms_diagnostic": {
+          "p10": 9.28256,
+          "median": 10.98752,
+          "p90": 14.90432
+        },
+        "gas_pressure_abs_bar": {
+          "p10": 2.255,
+          "median": 2.30902,
+          "p90": 2.345
+        },
+        "pressure_diff_bar": {
+          "p10": 1.59075,
+          "median": 1.64825,
+          "p90": 1.70845
+        },
+        "water_c": {
+          "p10": 61.0,
+          "median": 75.0,
+          "p90": 77.0
+        },
+        "gas_c": {
+          "p10": 66.0,
+          "median": 80.0,
+          "p90": 86.0
+        },
+        "dynamic_correction": {
+          "p10": 217.0,
+          "median": 222.0,
+          "p90": 223.0
+        }
+      }
+    },
+    {
+      "fuel": "CNG",
+      "state": "CRUISE",
+      "rpmBin": 2,
+      "loadBin": 2,
+      "count": 741,
+      "values": {
+        "rpm": {
+          "p10": 1588.0,
+          "median": 1789.0,
+          "p90": 2141.0
+        },
+        "load_bar": {
+          "p10": 0.403,
+          "median": 0.443,
+          "p90": 0.511
+        },
+        "petrol_ms": {
+          "p10": 3.18208,
+          "median": 3.75296,
+          "p90": 4.65152
+        },
+        "gas_ms_diagnostic": {
+          "p10": 6.73792,
+          "median": 8.20736,
+          "p90": 9.68192
+        },
+        "gas_pressure_abs_bar": {
+          "p10": 2.1975,
+          "median": 2.30118,
+          "p90": 2.36471
+        },
+        "pressure_diff_bar": {
+          "p10": 1.753,
+          "median": 1.84575,
+          "p90": 1.92131
+        },
+        "water_c": {
+          "p10": 61.0,
+          "median": 71.0,
+          "p90": 77.0
+        },
+        "gas_c": {
+          "p10": 37.0,
+          "median": 68.0,
+          "p90": 86.0
+        },
+        "dynamic_correction": {
+          "p10": 218.0,
+          "median": 223.0,
+          "p90": 224.0
+        }
+      }
+    },
+    {
+      "fuel": "CNG",
+      "state": "LOAD",
+      "rpmBin": 2,
+      "loadBin": 2,
+      "count": 173,
+      "values": {
+        "rpm": {
+          "p10": 1599.0,
+          "median": 1875.0,
+          "p90": 2146.0
+        },
+        "load_bar": {
+          "p10": 0.55,
+          "median": 0.58,
+          "p90": 0.6
+        },
+        "petrol_ms": {
+          "p10": 3.9424,
+          "median": 4.68736,
+          "p90": 5.98528
+        },
+        "gas_ms_diagnostic": {
+          "p10": 7.94624,
+          "median": 9.44384,
+          "p90": 12.40832
+        },
+        "gas_pressure_abs_bar": {
+          "p10": 2.2225,
+          "median": 2.31686,
+          "p90": 2.3502
+        },
+        "pressure_diff_bar": {
+          "p10": 1.6325,
+          "median": 1.73725,
+          "p90": 1.78625
+        },
+        "water_c": {
+          "p10": 60.0,
+          "median": 74.0,
+          "p90": 77.0
+        },
+        "gas_c": {
+          "p10": 67.0,
+          "median": 84.0,
+          "p90": 90.0
+        },
+        "dynamic_correction": {
+          "p10": 219.0,
+          "median": 223.0,
+          "p90": 224.0
+        }
+      }
+    },
+    {
+      "fuel": "CNG",
+      "state": "ACCEL",
+      "rpmBin": 0,
+      "loadBin": 4,
+      "count": 36,
+      "values": {
+        "rpm": {
+          "p10": 554.0,
+          "median": 668.0,
+          "p90": 732.0
+        },
+        "load_bar": {
+          "p10": 0.835,
+          "median": 0.952,
+          "p90": 0.992
+        },
+        "petrol_ms": {
+          "p10": 9.42336,
+          "median": 13.09696,
+          "p90": 18.33472
+        },
+        "gas_ms_diagnostic": {
+          "p10": 16.30208,
+          "median": 25.73312,
+          "p90": 34.3936
+        },
+        "gas_pressure_abs_bar": {
+          "p10": 2.195,
+          "median": 2.27333,
+          "p90": 2.325
+        },
+        "pressure_diff_bar": {
+          "p10": 1.2355,
+          "median": 1.3245,
+          "p90": 1.425
+        },
+        "water_c": {
+          "p10": 48.0,
+          "median": 68.0,
+          "p90": 76.0
+        },
+        "gas_c": {
+          "p10": 49.0,
+          "median": 69.0,
+          "p90": 88.0
+        },
+        "dynamic_correction": {
+          "p10": 216.0,
+          "median": 224.0,
+          "p90": 226.0
+        }
+      }
+    },
+    {
+      "fuel": "CNG",
+      "state": "ACCEL",
+      "rpmBin": 4,
+      "loadBin": 3,
+      "count": 121,
+      "values": {
+        "rpm": {
+          "p10": 3038.0,
+          "median": 3337.0,
+          "p90": 3645.0
+        },
+        "load_bar": {
+          "p10": 0.668,
+          "median": 0.756,
+          "p90": 0.796
+        },
+        "petrol_ms": {
+          "p10": 8.56064,
+          "median": 9.664,
+          "p90": 10.82112
+        },
+        "gas_ms_diagnostic": {
+          "p10": 17.01888,
+          "median": 19.38176,
+          "p90": 21.58592
+        },
+        "gas_pressure_abs_bar": {
+          "p10": 2.175,
+          "median": 2.27686,
+          "p90": 2.31294
+        },
+        "pressure_diff_bar": {
+          "p10": 1.41525,
+          "median": 1.51929,
+          "p90": 1.60025
+        },
+        "water_c": {
+          "p10": 60.0,
+          "median": 73.0,
+          "p90": 80.0
+        },
+        "gas_c": {
+          "p10": 66.0,
+          "median": 83.0,
+          "p90": 112.0
+        },
+        "dynamic_correction": {
+          "p10": 217.0,
+          "median": 220.0,
+          "p90": 222.0
+        }
+      }
+    },
+    {
+      "fuel": "CNG",
+      "state": "LOAD",
+      "rpmBin": 3,
+      "loadBin": 2,
+      "count": 74,
+      "values": {
+        "rpm": {
+          "p10": 2337.0,
+          "median": 2529.0,
+          "p90": 2777.0
+        },
+        "load_bar": {
+          "p10": 0.56,
+          "median": 0.58,
+          "p90": 0.6
+        },
+        "petrol_ms": {
+          "p10": 4.02432,
+          "median": 4.71552,
+          "p90": 6.20032
+        },
+        "gas_ms_diagnostic": {
+          "p10": 8.54016,
+          "median": 9.53088,
+          "p90": 12.73088
+        },
+        "gas_pressure_abs_bar": {
+          "p10": 2.26118,
+          "median": 2.31375,
+          "p90": 2.3575
+        },
+        "pressure_diff_bar": {
+          "p10": 1.66451,
+          "median": 1.7425,
+          "p90": 1.79235
+        },
+        "water_c": {
+          "p10": 48.0,
+          "median": 73.0,
+          "p90": 77.0
+        },
+        "gas_c": {
+          "p10": 65.0,
+          "median": 80.0,
+          "p90": 92.0
+        },
+        "dynamic_correction": {
+          "p10": 218.0,
+          "median": 222.0,
+          "p90": 224.0
+        }
+      }
+    },
+    {
+      "fuel": "TRANSITION",
+      "state": "CUTOFF",
+      "rpmBin": 2,
+      "loadBin": 0,
+      "count": 143,
+      "values": {
+        "rpm": {
+          "p10": 1734.0,
+          "median": 1951.0,
+          "p90": 2170.0
+        },
+        "load_bar": {
+          "p10": 0.168,
+          "median": 0.178,
+          "p90": 0.188
+        },
+        "petrol_ms": {
+          "p10": 0.0,
+          "median": 0.0,
+          "p90": 0.0
+        },
+        "gas_pressure_abs_bar": {
+          "p10": 2.56392,
+          "median": 2.87098,
+          "p90": 3.565
+        },
+        "pressure_diff_bar": {
+          "p10": 2.39592,
+          "median": 2.69298,
+          "p90": 3.387
+        },
+        "water_c": {
+          "p10": 60.0,
+          "median": 66.0,
+          "p90": 74.0
+        },
+        "gas_c": {
+          "p10": 64.0,
+          "median": 76.0,
+          "p90": 115.0
+        },
+        "dynamic_correction": {
+          "p10": 221.0,
+          "median": 223.0,
+          "p90": 224.0
+        }
+      }
+    },
+    {
+      "fuel": "CNG",
+      "state": "LOAD",
+      "rpmBin": 1,
+      "loadBin": 3,
+      "count": 256,
+      "values": {
+        "rpm": {
+          "p10": 876.0,
+          "median": 1164.0,
+          "p90": 1455.0
+        },
+        "load_bar": {
+          "p10": 0.609,
+          "median": 0.639,
+          "p90": 0.688
+        },
+        "petrol_ms": {
+          "p10": 5.1328,
+          "median": 6.7968,
+          "p90": 9.536
+        },
+        "gas_ms_diagnostic": {
+          "p10": 10.10688,
+          "median": 13.83936,
+          "p90": 19.52768
+        },
+        "gas_pressure_abs_bar": {
+          "p10": 2.26375,
+          "median": 2.31255,
+          "p90": 2.36392
+        },
+        "pressure_diff_bar": {
+          "p10": 1.59825,
+          "median": 1.66747,
+          "p90": 1.7345
+        },
+        "water_c": {
+          "p10": 61.0,
+          "median": 73.0,
+          "p90": 78.0
+        },
+        "gas_c": {
+          "p10": 49.0,
+          "median": 82.0,
+          "p90": 93.0
+        },
+        "dynamic_correction": {
+          "p10": 218.0,
+          "median": 223.0,
+          "p90": 224.0
+        }
+      }
+    },
+    {
+      "fuel": "CNG",
+      "state": "ACCEL",
+      "rpmBin": 2,
+      "loadBin": 3,
+      "count": 306,
+      "values": {
+        "rpm": {
+          "p10": 1630.0,
+          "median": 1981.0,
+          "p90": 2180.0
+        },
+        "load_bar": {
+          "p10": 0.717,
+          "median": 0.756,
+          "p90": 0.786
+        },
+        "petrol_ms": {
+          "p10": 5.92128,
+          "median": 7.29856,
+          "p90": 8.82432
+        },
+        "gas_ms_diagnostic": {
+          "p10": 11.9424,
+          "median": 14.1952,
+          "p90": 17.19296
+        },
+        "gas_pressure_abs_bar": {
+          "p10": 2.25375,
+          "median": 2.30375,
+          "p90": 2.33294
+        },
+        "pressure_diff_bar": {
+          "p10": 1.4915,
+          "median": 1.55025,
+          "p90": 1.59476
+        },
+        "water_c": {
+          "p10": 60.0,
+          "median": 75.0,
+          "p90": 78.0
+        },
+        "gas_c": {
+          "p10": 67.0,
+          "median": 82.0,
+          "p90": 89.0
+        },
+        "dynamic_correction": {
+          "p10": 217.0,
+          "median": 222.0,
+          "p90": 223.0
+        }
+      }
+    },
+    {
+      "fuel": "CNG",
+      "state": "LOAD",
+      "rpmBin": 4,
+      "loadBin": 3,
+      "count": 16,
+      "values": {
+        "rpm": {
+          "p10": 3000.0,
+          "median": 3050.0,
+          "p90": 3193.0
+        },
+        "load_bar": {
+          "p10": 0.609,
+          "median": 0.639,
+          "p90": 0.678
+        },
+        "petrol_ms": {
+          "p10": 6.68416,
+          "median": 7.83872,
+          "p90": 8.19712
+        },
+        "gas_ms_diagnostic": {
+          "p10": 14.08256,
+          "median": 15.86688,
+          "p90": 17.0112
+        },
+        "gas_pressure_abs_bar": {
+          "p10": 2.145,
+          "median": 2.24667,
+          "p90": 2.29765
+        },
+        "pressure_diff_bar": {
+          "p10": 1.49575,
+          "median": 1.59925,
+          "p90": 1.666
+        },
+        "water_c": {
+          "p10": 60.0,
+          "median": 67.0,
+          "p90": 78.0
+        },
+        "gas_c": {
+          "p10": 62.0,
+          "median": 68.0,
+          "p90": 109.0
+        },
+        "dynamic_correction": {
+          "p10": 219.0,
+          "median": 222.0,
+          "p90": 222.0
+        }
+      }
+    },
+    {
+      "fuel": "CNG",
+      "state": "CRUISE",
+      "rpmBin": 4,
+      "loadBin": 2,
+      "count": 11,
+      "values": {
+        "rpm": {
+          "p10": 3050.0,
+          "median": 3119.0,
+          "p90": 3192.0
+        },
+        "load_bar": {
+          "p10": 0.433,
+          "median": 0.482,
+          "p90": 0.521
+        },
+        "petrol_ms": {
+          "p10": 4.352,
+          "median": 4.9408,
+          "p90": 8.70912
+        },
+        "gas_ms_diagnostic": {
+          "p10": 8.79616,
+          "median": 10.96448,
+          "p90": 11.79392
+        },
+        "gas_pressure_abs_bar": {
+          "p10": 2.32157,
+          "median": 2.34549,
+          "p90": 2.365
+        },
+        "pressure_diff_bar": {
+          "p10": 1.80057,
+          "median": 1.86349,
+          "p90": 1.92825
+        },
+        "water_c": {
+          "p10": 65.0,
+          "median": 73.0,
+          "p90": 78.0
+        },
+        "gas_c": {
+          "p10": 68.0,
+          "median": 89.0,
+          "p90": 115.0
+        },
+        "dynamic_correction": {
+          "p10": 217.0,
+          "median": 219.0,
+          "p90": 222.0
+        }
+      }
+    },
+    {
+      "fuel": "CNG",
+      "state": "ACCEL",
+      "rpmBin": 4,
+      "loadBin": 4,
+      "count": 191,
+      "values": {
+        "rpm": {
+          "p10": 3065.0,
+          "median": 3329.0,
+          "p90": 3635.0
+        },
+        "load_bar": {
+          "p10": 0.825,
+          "median": 0.962,
+          "p90": 0.982
+        },
+        "petrol_ms": {
+          "p10": 10.76992,
+          "median": 13.11488,
+          "p90": 14.37696
+        },
+        "gas_ms_diagnostic": {
+          "p10": 21.07392,
+          "median": 24.65024,
+          "p90": 27.10272
+        },
+        "gas_pressure_abs_bar": {
+          "p10": 2.175,
+          "median": 2.26745,
+          "p90": 2.30784
+        },
+        "pressure_diff_bar": {
+          "p10": 1.25212,
+          "median": 1.31545,
+          "p90": 1.44735
+        },
+        "water_c": {
+          "p10": 60.0,
+          "median": 75.0,
+          "p90": 80.0
+        },
+        "gas_c": {
+          "p10": 68.0,
+          "median": 88.0,
+          "p90": 116.0
+        },
+        "dynamic_correction": {
+          "p10": 216.0,
+          "median": 220.0,
+          "p90": 222.0
+        }
+      }
+    },
+    {
+      "fuel": "CNG",
+      "state": "LOAD",
+      "rpmBin": 3,
+      "loadBin": 3,
+      "count": 148,
+      "values": {
+        "rpm": {
+          "p10": 2311.0,
+          "median": 2526.0,
+          "p90": 2934.0
+        },
+        "load_bar": {
+          "p10": 0.609,
+          "median": 0.649,
+          "p90": 0.688
+        },
+        "petrol_ms": {
+          "p10": 4.69248,
+          "median": 6.16192,
+          "p90": 8.02816
+        },
+        "gas_ms_diagnostic": {
+          "p10": 9.74848,
+          "median": 12.43904,
+          "p90": 15.9616
+        },
+        "gas_pressure_abs_bar": {
+          "p10": 2.2175,
+          "median": 2.30588,
+          "p90": 2.34745
+        },
+        "pressure_diff_bar": {
+          "p10": 1.58063,
+          "median": 1.65492,
+          "p90": 1.7085
+        },
+        "water_c": {
+          "p10": 48.0,
+          "median": 70.0,
+          "p90": 77.0
+        },
+        "gas_c": {
+          "p10": 67.0,
+          "median": 79.0,
+          "p90": 91.0
+        },
+        "dynamic_correction": {
+          "p10": 218.0,
+          "median": 222.0,
+          "p90": 223.0
+        }
+      }
+    },
+    {
+      "fuel": "PETROL",
+      "state": "LOAD",
+      "rpmBin": 2,
+      "loadBin": 2,
+      "count": 19,
+      "values": {
+        "rpm": {
+          "p10": 1690.0,
+          "median": 2023.0,
+          "p90": 2087.0
+        },
+        "load_bar": {
+          "p10": 0.55,
+          "median": 0.58,
+          "p90": 0.6
+        },
+        "petrol_ms": {
+          "p10": 4.59776,
+          "median": 4.9536,
+          "p90": 6.00064
+        },
+        "gas_pressure_abs_bar": {
+          "p10": 2.53375,
+          "median": 2.86235,
+          "p90": 3.3075
+        },
+        "pressure_diff_bar": {
+          "p10": 1.96549,
+          "median": 2.28176,
+          "p90": 2.7075
+        },
+        "water_c": {
+          "p10": 61.0,
+          "median": 77.0,
+          "p90": 81.0
+        },
+        "gas_c": {
+          "p10": 62.0,
+          "median": 68.0,
+          "p90": 96.0
+        },
+        "dynamic_correction": {
+          "p10": 0.0,
+          "median": 0.0,
+          "p90": 0.0
+        }
+      }
+    },
+    {
+      "fuel": "PETROL",
+      "state": "CRUISE",
+      "rpmBin": 2,
+      "loadBin": 2,
+      "count": 51,
+      "values": {
+        "rpm": {
+          "p10": 1618.0,
+          "median": 1820.0,
+          "p90": 2087.0
+        },
+        "load_bar": {
+          "p10": 0.413,
+          "median": 0.462,
+          "p90": 0.521
+        },
+        "petrol_ms": {
+          "p10": 3.91168,
+          "median": 4.47488,
+          "p90": 6.76352
+        },
+        "gas_pressure_abs_bar": {
+          "p10": 2.58784,
+          "median": 2.84625,
+          "p90": 3.5175
+        },
+        "pressure_diff_bar": {
+          "p10": 2.12584,
+          "median": 2.35133,
+          "p90": 3.0745
+        },
+        "water_c": {
+          "p10": 61.0,
+          "median": 79.0,
+          "p90": 82.0
+        },
+        "gas_c": {
+          "p10": 62.0,
+          "median": 68.0,
+          "p90": 111.0
+        },
+        "dynamic_correction": {
+          "p10": 0.0,
+          "median": 0.0,
+          "p90": 0.0
+        }
+      }
+    },
+    {
+      "fuel": "PETROL",
+      "state": "ACCEL",
+      "rpmBin": 2,
+      "loadBin": 4,
+      "count": 26,
+      "values": {
+        "rpm": {
+          "p10": 1596.0,
+          "median": 1980.0,
+          "p90": 2062.0
+        },
+        "load_bar": {
+          "p10": 0.825,
+          "median": 0.845,
+          "p90": 0.952
+        },
+        "petrol_ms": {
+          "p10": 9.24416,
+          "median": 10.76224,
+          "p90": 14.7584
+        },
+        "gas_pressure_abs_bar": {
+          "p10": 2.44375,
+          "median": 2.89375,
+          "p90": 3.02625
+        },
+        "pressure_diff_bar": {
+          "p10": 1.59875,
+          "median": 1.95075,
+          "p90": 2.20125
+        },
+        "water_c": {
+          "p10": 61.0,
+          "median": 62.0,
+          "p90": 79.0
+        },
+        "gas_c": {
+          "p10": 62.0,
+          "median": 63.0,
+          "p90": 68.0
+        },
+        "dynamic_correction": {
+          "p10": 0.0,
+          "median": 0.0,
+          "p90": 0.0
+        }
+      }
+    },
+    {
+      "fuel": "PETROL",
+      "state": "LOAD",
+      "rpmBin": 2,
+      "loadBin": 3,
+      "count": 52,
+      "values": {
+        "rpm": {
+          "p10": 1703.0,
+          "median": 2021.0,
+          "p90": 2116.0
+        },
+        "load_bar": {
+          "p10": 0.619,
+          "median": 0.658,
+          "p90": 0.688
+        },
+        "petrol_ms": {
+          "p10": 5.27872,
+          "median": 5.72928,
+          "p90": 6.67136
+        },
+        "gas_pressure_abs_bar": {
+          "p10": 2.49961,
+          "median": 2.59412,
+          "p90": 3.23625
+        },
+        "pressure_diff_bar": {
+          "p10": 1.81161,
+          "median": 1.94512,
+          "p90": 2.56825
+        },
+        "water_c": {
+          "p10": 61.0,
+          "median": 77.0,
+          "p90": 80.0
+        },
+        "gas_c": {
+          "p10": 62.0,
+          "median": 65.0,
+          "p90": 83.0
+        },
+        "dynamic_correction": {
+          "p10": 0.0,
+          "median": 0.0,
+          "p90": 0.0
+        }
+      }
+    },
+    {
+      "fuel": "PETROL",
+      "state": "CRUISE",
+      "rpmBin": 2,
+      "loadBin": 1,
+      "count": 408,
+      "values": {
+        "rpm": {
+          "p10": 1573.0,
+          "median": 1817.0,
+          "p90": 1937.0
+        },
+        "load_bar": {
+          "p10": 0.227,
+          "median": 0.315,
+          "p90": 0.345
+        },
+        "petrol_ms": {
+          "p10": 2.55488,
+          "median": 3.3664,
+          "p90": 3.6608
+        },
+        "gas_pressure_abs_bar": {
+          "p10": 2.60157,
+          "median": 2.88375,
+          "p90": 3.63
+        },
+        "pressure_diff_bar": {
+          "p10": 2.28657,
+          "median": 2.545,
+          "p90": 3.2975
+        },
+        "water_c": {
+          "p10": 68.0,
+          "median": 71.0,
+          "p90": 83.0
+        },
+        "gas_c": {
+          "p10": 37.0,
+          "median": 66.0,
+          "p90": 79.0
+        },
+        "dynamic_correction": {
+          "p10": 0.0,
+          "median": 0.0,
+          "p90": 0.0
+        }
+      }
+    },
+    {
+      "fuel": "PETROL",
+      "state": "ACCEL",
+      "rpmBin": 3,
+      "loadBin": 4,
+      "count": 27,
+      "values": {
+        "rpm": {
+          "p10": 2406.0,
+          "median": 2575.0,
+          "p90": 2800.0
+        },
+        "load_bar": {
+          "p10": 0.805,
+          "median": 0.845,
+          "p90": 0.972
+        },
+        "petrol_ms": {
+          "p10": 7.97696,
+          "median": 10.98496,
+          "p90": 13.824
+        },
+        "gas_pressure_abs_bar": {
+          "p10": 2.41529,
+          "median": 2.73255,
+          "p90": 2.99
+        },
+        "pressure_diff_bar": {
+          "p10": 1.51229,
+          "median": 1.83524,
+          "p90": 2.145
+        },
+        "water_c": {
+          "p10": 64.0,
+          "median": 80.0,
+          "p90": 82.0
+        },
+        "gas_c": {
+          "p10": 64.0,
+          "median": 65.0,
+          "p90": 100.0
+        },
+        "dynamic_correction": {
+          "p10": 0.0,
+          "median": 0.0,
+          "p90": 0.0
+        }
+      }
+    },
+    {
+      "fuel": "PETROL",
+      "state": "ACCEL",
+      "rpmBin": 3,
+      "loadBin": 3,
+      "count": 46,
+      "values": {
+        "rpm": {
+          "p10": 2364.0,
+          "median": 2531.0,
+          "p90": 2881.0
+        },
+        "load_bar": {
+          "p10": 0.717,
+          "median": 0.756,
+          "p90": 0.786
+        },
+        "petrol_ms": {
+          "p10": 6.57152,
+          "median": 7.58784,
+          "p90": 9.59744
+        },
+        "gas_pressure_abs_bar": {
+          "p10": 2.46078,
+          "median": 2.48431,
+          "p90": 3.165
+        },
+        "pressure_diff_bar": {
+          "p10": 1.67478,
+          "median": 1.75731,
+          "p90": 2.448
+        },
+        "water_c": {
+          "p10": 61.0,
+          "median": 80.0,
+          "p90": 84.0
+        },
+        "gas_c": {
+          "p10": 62.0,
+          "median": 64.0,
+          "p90": 65.0
+        },
+        "dynamic_correction": {
+          "p10": 0.0,
+          "median": 0.0,
+          "p90": 0.0
+        }
+      }
+    },
+    {
+      "fuel": "PETROL",
+      "state": "ACCEL",
+      "rpmBin": 2,
+      "loadBin": 3,
+      "count": 52,
+      "values": {
+        "rpm": {
+          "p10": 1706.0,
+          "median": 1783.0,
+          "p90": 2114.0
+        },
+        "load_bar": {
+          "p10": 0.707,
+          "median": 0.747,
+          "p90": 0.786
+        },
+        "petrol_ms": {
+          "p10": 6.53824,
+          "median": 7.8336,
+          "p90": 9.0496
+        },
+        "gas_pressure_abs_bar": {
+          "p10": 2.47412,
+          "median": 2.96,
+          "p90": 3.12875
+        },
+        "pressure_diff_bar": {
+          "p10": 1.72712,
+          "median": 2.213,
+          "p90": 2.39175
+        },
+        "water_c": {
+          "p10": 67.0,
+          "median": 67.0,
+          "p90": 80.0
+        },
+        "gas_c": {
+          "p10": 63.0,
+          "median": 66.0,
+          "p90": 66.0
+        },
+        "dynamic_correction": {
+          "p10": 0.0,
+          "median": 0.0,
+          "p90": 0.0
+        }
+      }
+    },
+    {
+      "fuel": "PETROL",
+      "state": "CRUISE",
+      "rpmBin": 2,
+      "loadBin": 0,
+      "count": 118,
+      "values": {
+        "rpm": {
+          "p10": 1635.0,
+          "median": 1745.0,
+          "p90": 2004.0
+        },
+        "load_bar": {
+          "p10": 0.168,
+          "median": 0.188,
+          "p90": 0.198
+        },
+        "petrol_ms": {
+          "p10": 2.0352,
+          "median": 2.27072,
+          "p90": 2.3168
+        },
+        "gas_pressure_abs_bar": {
+          "p10": 2.69569,
+          "median": 3.72625,
+          "p90": 3.81875
+        },
+        "pressure_diff_bar": {
+          "p10": 2.50769,
+          "median": 3.54825,
+          "p90": 3.64825
+        },
+        "water_c": {
+          "p10": 66.0,
+          "median": 68.0,
+          "p90": 82.0
+        },
+        "gas_c": {
+          "p10": 64.0,
+          "median": 66.0,
+          "p90": 110.0
+        },
+        "dynamic_correction": {
+          "p10": 0.0,
+          "median": 0.0,
+          "p90": 0.0
+        }
+      }
+    },
+    {
+      "fuel": "PETROL",
+      "state": "CRUISE",
+      "rpmBin": 1,
+      "loadBin": 0,
+      "count": 10,
+      "values": {
+        "rpm": {
+          "p10": 1414.0,
+          "median": 1434.0,
+          "p90": 1472.0
+        },
+        "load_bar": {
+          "p10": 0.178,
+          "median": 0.188,
+          "p90": 0.198
+        },
+        "petrol_ms": {
+          "p10": 2.05056,
+          "median": 2.304,
+          "p90": 2.47552
+        },
+        "gas_pressure_abs_bar": {
+          "p10": 2.69529,
+          "median": 2.8502,
+          "p90": 3.78375
+        },
+        "pressure_diff_bar": {
+          "p10": 2.50729,
+          "median": 2.6522,
+          "p90": 3.58575
+        },
+        "water_c": {
+          "p10": 66.0,
+          "median": 79.0,
+          "p90": 84.0
+        },
+        "gas_c": {
+          "p10": 63.0,
+          "median": 65.0,
+          "p90": 112.0
+        },
+        "dynamic_correction": {
+          "p10": 0.0,
+          "median": 0.0,
+          "p90": 0.0
+        }
+      }
+    },
+    {
+      "fuel": "PETROL",
+      "state": "IDLE",
+      "rpmBin": 1,
+      "loadBin": 1,
+      "count": 389,
+      "values": {
+        "rpm": {
+          "p10": 863.0,
+          "median": 1144.0,
+          "p90": 1198.0
+        },
+        "load_bar": {
+          "p10": 0.325,
+          "median": 0.345,
+          "p90": 0.374
+        },
+        "petrol_ms": {
+          "p10": 3.648,
+          "median": 3.96032,
+          "p90": 4.26752
+        },
+        "gas_pressure_abs_bar": {
+          "p10": 2.59843,
+          "median": 2.62627,
+          "p90": 2.92902
+        },
+        "pressure_diff_bar": {
+          "p10": 2.22522,
+          "median": 2.29049,
+          "p90": 2.56776
+        },
+        "water_c": {
+          "p10": 75.0,
+          "median": 82.0,
+          "p90": 82.0
+        },
+        "gas_c": {
+          "p10": 64.0,
+          "median": 70.0,
+          "p90": 83.0
+        },
+        "dynamic_correction": {
+          "p10": 0.0,
+          "median": 0.0,
+          "p90": 0.0
+        }
+      }
+    },
+    {
+      "fuel": "PETROL",
+      "state": "CRUISE",
+      "rpmBin": 1,
+      "loadBin": 2,
+      "count": 7799,
+      "values": {
+        "rpm": {
+          "p10": 865.0,
+          "median": 870.0,
+          "p90": 879.0
+        },
+        "load_bar": {
+          "p10": 0.403,
+          "median": 0.413,
+          "p90": 0.443
+        },
+        "petrol_ms": {
+          "p10": 4.52352,
+          "median": 4.67712,
+          "p90": 4.92544
+        },
+        "gas_pressure_abs_bar": {
+          "p10": 2.625,
+          "median": 2.71804,
+          "p90": 3.2225
+        },
+        "pressure_diff_bar": {
+          "p10": 2.20425,
+          "median": 2.30269,
+          "p90": 2.817
+        },
+        "water_c": {
+          "p10": 62.0,
+          "median": 73.0,
+          "p90": 75.0
+        },
+        "gas_c": {
+          "p10": 44.0,
+          "median": 82.0,
+          "p90": 86.0
+        },
+        "dynamic_correction": {
+          "p10": 0.0,
+          "median": 0.0,
+          "p90": 0.0
+        }
+      }
+    },
+    {
+      "fuel": "PETROL",
+      "state": "ACCEL",
+      "rpmBin": 1,
+      "loadBin": 4,
+      "count": 12,
+      "values": {
+        "rpm": {
+          "p10": 939.0,
+          "median": 1072.0,
+          "p90": 1440.0
+        },
+        "load_bar": {
+          "p10": 0.825,
+          "median": 0.913,
+          "p90": 0.952
+        },
+        "petrol_ms": {
+          "p10": 11.53792,
+          "median": 14.0544,
+          "p90": 16.52224
+        },
+        "gas_pressure_abs_bar": {
+          "p10": 2.39608,
+          "median": 2.89,
+          "p90": 2.96
+        },
+        "pressure_diff_bar": {
+          "p10": 1.44408,
+          "median": 1.938,
+          "p90": 2.066
+        },
+        "water_c": {
+          "p10": 61.0,
+          "median": 62.0,
+          "p90": 80.0
+        },
+        "gas_c": {
+          "p10": 62.0,
+          "median": 63.0,
+          "p90": 65.0
+        },
+        "dynamic_correction": {
+          "p10": 0.0,
+          "median": 0.0,
+          "p90": 0.0
+        }
+      }
+    },
+    {
+      "fuel": "PETROL",
+      "state": "LOAD",
+      "rpmBin": 4,
+      "loadBin": 3,
+      "count": 11,
+      "values": {
+        "rpm": {
+          "p10": 3000.0,
+          "median": 3137.0,
+          "p90": 3172.0
+        },
+        "load_bar": {
+          "p10": 0.609,
+          "median": 0.629,
+          "p90": 0.658
+        },
+        "petrol_ms": {
+          "p10": 7.05024,
+          "median": 7.48288,
+          "p90": 7.8848
+        },
+        "gas_pressure_abs_bar": {
+          "p10": 2.40667,
+          "median": 2.51451,
+          "p90": 3.29
+        },
+        "pressure_diff_bar": {
+          "p10": 1.75767,
+          "median": 1.87551,
+          "p90": 2.681
+        },
+        "water_c": {
+          "p10": 65.0,
+          "median": 77.0,
+          "p90": 80.0
+        },
+        "gas_c": {
+          "p10": 63.0,
+          "median": 65.0,
+          "p90": 83.0
+        },
+        "dynamic_correction": {
+          "p10": 0.0,
+          "median": 0.0,
+          "p90": 0.0
+        }
+      }
+    },
+    {
+      "fuel": "PETROL",
+      "state": "LOAD",
+      "rpmBin": 3,
+      "loadBin": 2,
+      "count": 45,
+      "values": {
+        "rpm": {
+          "p10": 2463.0,
+          "median": 2540.0,
+          "p90": 2671.0
+        },
+        "load_bar": {
+          "p10": 0.55,
+          "median": 0.56,
+          "p90": 0.58
+        },
+        "petrol_ms": {
+          "p10": 4.7616,
+          "median": 4.95104,
+          "p90": 6.62528
+        },
+        "gas_pressure_abs_bar": {
+          "p10": 2.54706,
+          "median": 3.34,
+          "p90": 3.36375
+        },
+        "pressure_diff_bar": {
+          "p10": 1.97667,
+          "median": 2.77875,
+          "p90": 2.81375
+        },
+        "water_c": {
+          "p10": 63.0,
+          "median": 65.0,
+          "p90": 83.0
+        },
+        "gas_c": {
+          "p10": 64.0,
+          "median": 64.0,
+          "p90": 65.0
+        },
+        "dynamic_correction": {
+          "p10": 0.0,
+          "median": 0.0,
+          "p90": 0.0
+        }
+      }
+    },
+    {
+      "fuel": "PETROL",
+      "state": "LOAD",
+      "rpmBin": 3,
+      "loadBin": 3,
+      "count": 52,
+      "values": {
+        "rpm": {
+          "p10": 2470.0,
+          "median": 2568.0,
+          "p90": 2733.0
+        },
+        "load_bar": {
+          "p10": 0.619,
+          "median": 0.649,
+          "p90": 0.678
+        },
+        "petrol_ms": {
+          "p10": 5.57824,
+          "median": 6.08512,
+          "p90": 7.40352
+        },
+        "gas_pressure_abs_bar": {
+          "p10": 2.51098,
+          "median": 3.23375,
+          "p90": 3.265
+        },
+        "pressure_diff_bar": {
+          "p10": 1.84298,
+          "median": 2.57575,
+          "p90": 2.636
+        },
+        "water_c": {
+          "p10": 64.0,
+          "median": 64.0,
+          "p90": 81.0
+        },
+        "gas_c": {
+          "p10": 64.0,
+          "median": 64.0,
+          "p90": 65.0
+        },
+        "dynamic_correction": {
+          "p10": 0.0,
+          "median": 0.0,
+          "p90": 0.0
+        }
+      }
+    },
+    {
+      "fuel": "PETROL",
+      "state": "CRUISE",
+      "rpmBin": 3,
+      "loadBin": 2,
+      "count": 63,
+      "values": {
+        "rpm": {
+          "p10": 2402.0,
+          "median": 2572.0,
+          "p90": 2900.0
+        },
+        "load_bar": {
+          "p10": 0.443,
+          "median": 0.521,
+          "p90": 0.541
+        },
+        "petrol_ms": {
+          "p10": 3.90144,
+          "median": 4.54144,
+          "p90": 4.89216
+        },
+        "gas_pressure_abs_bar": {
+          "p10": 2.56118,
+          "median": 2.58784,
+          "p90": 3.385
+        },
+        "pressure_diff_bar": {
+          "p10": 2.03018,
+          "median": 2.12584,
+          "p90": 2.854
+        },
+        "water_c": {
+          "p10": 64.0,
+          "median": 82.0,
+          "p90": 84.0
+        },
+        "gas_c": {
+          "p10": 64.0,
+          "median": 64.0,
+          "p90": 65.0
+        },
+        "dynamic_correction": {
+          "p10": 0.0,
+          "median": 0.0,
+          "p90": 0.0
+        }
+      }
+    },
+    {
+      "fuel": "PETROL",
+      "state": "CRUISE",
+      "rpmBin": 3,
+      "loadBin": 1,
+      "count": 44,
+      "values": {
+        "rpm": {
+          "p10": 2335.0,
+          "median": 2538.0,
+          "p90": 2631.0
+        },
+        "load_bar": {
+          "p10": 0.217,
+          "median": 0.305,
+          "p90": 0.364
+        },
+        "petrol_ms": {
+          "p10": 2.1888,
+          "median": 2.85696,
+          "p90": 3.6224
+        },
+        "gas_pressure_abs_bar": {
+          "p10": 2.6302,
+          "median": 2.6651,
+          "p90": 3.7175
+        },
+        "pressure_diff_bar": {
+          "p10": 2.2762,
+          "median": 2.3991,
+          "p90": 3.4515
+        },
+        "water_c": {
+          "p10": 63.0,
+          "median": 81.0,
+          "p90": 84.0
+        },
+        "gas_c": {
+          "p10": 64.0,
+          "median": 64.0,
+          "p90": 83.0
+        },
+        "dynamic_correction": {
+          "p10": 0.0,
+          "median": 0.0,
+          "p90": 0.0
+        }
+      }
+    },
+    {
+      "fuel": "PETROL",
+      "state": "CRUISE",
+      "rpmBin": 1,
+      "loadBin": 1,
+      "count": 1725,
+      "values": {
+        "rpm": {
+          "p10": 865.0,
+          "median": 869.0,
+          "p90": 1408.0
+        },
+        "load_bar": {
+          "p10": 0.325,
+          "median": 0.394,
+          "p90": 0.394
+        },
+        "petrol_ms": {
+          "p10": 3.69664,
+          "median": 4.38528,
+          "p90": 4.47488
+        },
+        "gas_pressure_abs_bar": {
+          "p10": 2.6,
+          "median": 2.63569,
+          "p90": 3.23375
+        },
+        "pressure_diff_bar": {
+          "p10": 2.21071,
+          "median": 2.27953,
+          "p90": 2.841
+        },
+        "water_c": {
+          "p10": 70.0,
+          "median": 82.0,
+          "p90": 84.0
+        },
+        "gas_c": {
+          "p10": 39.0,
+          "median": 68.0,
+          "p90": 83.0
+        },
+        "dynamic_correction": {
+          "p10": 0.0,
+          "median": 0.0,
+          "p90": 0.0
+        }
+      }
+    },
+    {
+      "fuel": "CNG",
+      "state": "CRUISE",
+      "rpmBin": 3,
+      "loadBin": 0,
+      "count": 36,
+      "values": {
+        "rpm": {
+          "p10": 2307.0,
+          "median": 2530.0,
+          "p90": 2702.0
+        },
+        "load_bar": {
+          "p10": 0.178,
+          "median": 0.198,
+          "p90": 0.198
+        },
+        "petrol_ms": {
+          "p10": 1.43872,
+          "median": 1.60512,
+          "p90": 1.91744
+        },
+        "gas_ms_diagnostic": {
+          "p10": 2.56512,
+          "median": 3.44064,
+          "p90": 4.14976
+        },
+        "gas_pressure_abs_bar": {
+          "p10": 2.35,
+          "median": 2.38588,
+          "p90": 2.62875
+        },
+        "pressure_diff_bar": {
+          "p10": 2.152,
+          "median": 2.18867,
+          "p90": 2.43075
+        },
+        "water_c": {
+          "p10": 47.0,
+          "median": 62.0,
+          "p90": 75.0
+        },
+        "gas_c": {
+          "p10": 63.0,
+          "median": 68.0,
+          "p90": 94.0
+        },
+        "dynamic_correction": {
+          "p10": 220.0,
+          "median": 223.0,
+          "p90": 223.0
+        }
+      }
+    },
+    {
+      "fuel": "TRANSITION",
+      "state": "CUTOFF",
+      "rpmBin": 3,
+      "loadBin": 0,
+      "count": 47,
+      "values": {
+        "rpm": {
+          "p10": 2284.0,
+          "median": 2465.0,
+          "p90": 2884.0
+        },
+        "load_bar": {
+          "p10": 0.168,
+          "median": 0.178,
+          "p90": 0.188
+        },
+        "petrol_ms": {
+          "p10": 0.0,
+          "median": 0.0,
+          "p90": 0.0
+        },
+        "gas_pressure_abs_bar": {
+          "p10": 2.50667,
+          "median": 2.6498,
+          "p90": 2.82625
+        },
+        "pressure_diff_bar": {
+          "p10": 2.33867,
+          "median": 2.48259,
+          "p90": 2.64825
+        },
+        "water_c": {
+          "p10": 39.0,
+          "median": 70.0,
+          "p90": 76.0
+        },
+        "gas_c": {
+          "p10": 64.0,
+          "median": 92.0,
+          "p90": 108.0
+        },
+        "dynamic_correction": {
+          "p10": 222.0,
+          "median": 223.0,
+          "p90": 224.0
+        }
+      }
+    },
+    {
+      "fuel": "TRANSITION",
+      "state": "CUTOFF",
+      "rpmBin": 4,
+      "loadBin": 1,
+      "count": 24,
+      "values": {
+        "rpm": {
+          "p10": 3096.0,
+          "median": 3354.0,
+          "p90": 3540.0
+        },
+        "load_bar": {
+          "p10": 0.217,
+          "median": 0.266,
+          "p90": 0.345
+        },
+        "petrol_ms": {
+          "p10": 0.0,
+          "median": 0.0,
+          "p90": 0.0
+        },
+        "gas_pressure_abs_bar": {
+          "p10": 2.4349,
+          "median": 2.51882,
+          "p90": 2.58863
+        },
+        "pressure_diff_bar": {
+          "p10": 2.10698,
+          "median": 2.25282,
+          "p90": 2.37163
+        },
+        "water_c": {
+          "p10": 38.0,
+          "median": 75.0,
+          "p90": 77.0
+        },
+        "gas_c": {
+          "p10": 76.0,
+          "median": 91.0,
+          "p90": 117.0
+        },
+        "dynamic_correction": {
+          "p10": 223.0,
+          "median": 224.0,
+          "p90": 224.0
+        }
+      }
+    },
+    {
+      "fuel": "CNG",
+      "state": "ACCEL",
+      "rpmBin": 1,
+      "loadBin": 3,
+      "count": 130,
+      "values": {
+        "rpm": {
+          "p10": 828.0,
+          "median": 1089.0,
+          "p90": 1408.0
+        },
+        "load_bar": {
+          "p10": 0.717,
+          "median": 0.747,
+          "p90": 0.786
+        },
+        "petrol_ms": {
+          "p10": 6.15168,
+          "median": 8.2944,
+          "p90": 11.31264
+        },
+        "gas_ms_diagnostic": {
+          "p10": 12.83072,
+          "median": 16.40448,
+          "p90": 23.48544
+        },
+        "gas_pressure_abs_bar": {
+          "p10": 2.1675,
+          "median": 2.3098,
+          "p90": 2.36824
+        },
+        "pressure_diff_bar": {
+          "p10": 1.43275,
+          "median": 1.55576,
+          "p90": 1.63104
+        },
+        "water_c": {
+          "p10": 60.0,
+          "median": 74.0,
+          "p90": 77.0
+        },
+        "gas_c": {
+          "p10": 66.0,
+          "median": 85.0,
+          "p90": 92.0
+        },
+        "dynamic_correction": {
+          "p10": 218.0,
+          "median": 223.0,
+          "p90": 224.0
+        }
+      }
+    },
+    {
+      "fuel": "TRANSITION",
+      "state": "CRUISE",
+      "rpmBin": 3,
+      "loadBin": 1,
+      "count": 48,
+      "values": {
+        "rpm": {
+          "p10": 2547.0,
+          "median": 2768.0,
+          "p90": 2926.0
+        },
+        "load_bar": {
+          "p10": 0.207,
+          "median": 0.276,
+          "p90": 0.364
+        },
+        "petrol_ms": {
+          "p10": 2.51904,
+          "median": 4.64128,
+          "p90": 6.68416
+        },
+        "gas_pressure_abs_bar": {
+          "p10": 3.02118,
+          "median": 3.05961,
+          "p90": 3.08706
+        },
+        "pressure_diff_bar": {
+          "p10": 2.62718,
+          "median": 2.76361,
+          "p90": 2.86006
+        },
+        "water_c": {
+          "p10": 34.0,
+          "median": 35.0,
+          "p90": 37.0
+        },
+        "gas_c": {
+          "p10": 83.0,
+          "median": 83.0,
+          "p90": 83.0
+        },
+        "dynamic_correction": {
+          "p10": 0.0,
+          "median": 0.0,
+          "p90": 0.0
+        }
+      }
+    },
+    {
+      "fuel": "TRANSITION",
+      "state": "CRUISE",
+      "rpmBin": 1,
+      "loadBin": 2,
+      "count": 1233,
+      "values": {
+        "rpm": {
+          "p10": 866.0,
+          "median": 876.0,
+          "p90": 1121.0
+        },
+        "load_bar": {
+          "p10": 0.403,
+          "median": 0.423,
+          "p90": 0.501
+        },
+        "petrol_ms": {
+          "p10": 3.93984,
+          "median": 4.6592,
+          "p90": 6.23616
+        },
+        "gas_pressure_abs_bar": {
+          "p10": 2.6702,
+          "median": 2.70745,
+          "p90": 3.045
+        },
+        "pressure_diff_bar": {
+          "p10": 2.23602,
+          "median": 2.27975,
+          "p90": 2.5955
+        },
+        "water_c": {
+          "p10": 70.0,
+          "median": 77.0,
+          "p90": 80.0
+        },
+        "gas_c": {
+          "p10": 44.0,
+          "median": 64.0,
+          "p90": 87.0
+        },
+        "dynamic_correction": {
+          "p10": 0.0,
+          "median": 0.0,
+          "p90": 226.0
+        }
+      }
+    },
+    {
+      "fuel": "TRANSITION",
+      "state": "LOAD",
+      "rpmBin": 1,
+      "loadBin": 2,
+      "count": 45,
+      "values": {
+        "rpm": {
+          "p10": 931.0,
+          "median": 1148.0,
+          "p90": 1377.0
+        },
+        "load_bar": {
+          "p10": 0.55,
+          "median": 0.57,
+          "p90": 0.6
+        },
+        "petrol_ms": {
+          "p10": 6.46912,
+          "median": 8.09728,
+          "p90": 10.0608
+        },
+        "gas_pressure_abs_bar": {
+          "p10": 2.6651,
+          "median": 2.86196,
+          "p90": 2.94745
+        },
+        "pressure_diff_bar": {
+          "p10": 2.10118,
+          "median": 2.27875,
+          "p90": 2.37
+        },
+        "water_c": {
+          "p10": 31.0,
+          "median": 73.0,
+          "p90": 77.0
+        },
+        "gas_c": {
+          "p10": 39.0,
+          "median": 83.0,
+          "p90": 88.0
+        },
+        "dynamic_correction": {
+          "p10": 0.0,
+          "median": 0.0,
+          "p90": 0.0
+        }
+      }
+    },
+    {
+      "fuel": "TRANSITION",
+      "state": "CRUISE",
+      "rpmBin": 1,
+      "loadBin": 1,
+      "count": 205,
+      "values": {
+        "rpm": {
+          "p10": 863.0,
+          "median": 872.0,
+          "p90": 1363.0
+        },
+        "load_bar": {
+          "p10": 0.345,
+          "median": 0.394,
+          "p90": 0.394
+        },
+        "petrol_ms": {
+          "p10": 3.79648,
+          "median": 4.224,
+          "p90": 4.5824
+        },
+        "gas_pressure_abs_bar": {
+          "p10": 2.68157,
+          "median": 2.68471,
+          "p90": 3.17
+        },
+        "pressure_diff_bar": {
+          "p10": 2.28757,
+          "median": 2.29071,
+          "p90": 2.776
+        },
+        "water_c": {
+          "p10": 71.0,
+          "median": 80.0,
+          "p90": 80.0
+        },
+        "gas_c": {
+          "p10": 57.0,
+          "median": 64.0,
+          "p90": 87.0
+        },
+        "dynamic_correction": {
+          "p10": 0.0,
+          "median": 0.0,
+          "p90": 226.0
+        }
+      }
+    },
+    {
+      "fuel": "TRANSITION",
+      "state": "ACCEL",
+      "rpmBin": 1,
+      "loadBin": 4,
+      "count": 8,
+      "values": {
+        "rpm": {
+          "p10": 931.0,
+          "median": 1012.0,
+          "p90": 1016.0
+        },
+        "load_bar": {
+          "p10": 0.805,
+          "median": 0.923,
+          "p90": 0.972
+        },
+        "petrol_ms": {
+          "p10": 11.06944,
+          "median": 12.49792,
+          "p90": 16.65792
+        },
+        "gas_pressure_abs_bar": {
+          "p10": 2.61875,
+          "median": 2.62875,
+          "p90": 2.73137
+        },
+        "pressure_diff_bar": {
+          "p10": 1.69575,
+          "median": 1.75192,
+          "p90": 1.82375
+        },
+        "water_c": {
+          "p10": 71.0,
+          "median": 71.0,
+          "p90": 75.0
+        },
+        "gas_c": {
+          "p10": 51.0,
+          "median": 55.0,
+          "p90": 86.0
+        },
+        "dynamic_correction": {
+          "p10": 0.0,
+          "median": 0.0,
+          "p90": 227.0
+        }
+      }
+    },
+    {
+      "fuel": "TRANSITION",
+      "state": "LOAD",
+      "rpmBin": 1,
+      "loadBin": 3,
+      "count": 9,
+      "values": {
+        "rpm": {
+          "p10": 1056.0,
+          "median": 1078.0,
+          "p90": 1156.0
+        },
+        "load_bar": {
+          "p10": 0.609,
+          "median": 0.639,
+          "p90": 0.649
+        },
+        "petrol_ms": {
+          "p10": 7.50336,
+          "median": 11.6608,
+          "p90": 12.8128
+        },
+        "gas_pressure_abs_bar": {
+          "p10": 2.6051,
+          "median": 2.8025,
+          "p90": 2.96625
+        },
+        "pressure_diff_bar": {
+          "p10": 1.9071,
+          "median": 2.1535,
+          "p90": 2.35725
+        },
+        "water_c": {
+          "p10": 70.0,
+          "median": 71.0,
+          "p90": 72.0
+        },
+        "gas_c": {
+          "p10": 37.0,
+          "median": 47.0,
+          "p90": 83.0
+        },
+        "dynamic_correction": {
+          "p10": 0.0,
+          "median": 0.0,
+          "p90": 0.0
+        }
+      }
+    },
+    {
+      "fuel": "TRANSITION",
+      "state": "IDLE",
+      "rpmBin": 1,
+      "loadBin": 1,
+      "count": 172,
+      "values": {
+        "rpm": {
+          "p10": 1012.0,
+          "median": 1106.0,
+          "p90": 1254.0
+        },
+        "load_bar": {
+          "p10": 0.325,
+          "median": 0.345,
+          "p90": 0.364
+        },
+        "petrol_ms": {
+          "p10": 3.72736,
+          "median": 3.90144,
+          "p90": 4.68224
+        },
+        "gas_pressure_abs_bar": {
+          "p10": 2.70353,
+          "median": 2.95686,
+          "p90": 2.9702
+        },
+        "pressure_diff_bar": {
+          "p10": 2.35853,
+          "median": 2.61147,
+          "p90": 2.6552
+        },
+        "water_c": {
+          "p10": 72.0,
+          "median": 77.0,
+          "p90": 80.0
+        },
+        "gas_c": {
+          "p10": 64.0,
+          "median": 87.0,
+          "p90": 88.0
+        },
+        "dynamic_correction": {
+          "p10": 0.0,
+          "median": 0.0,
+          "p90": 0.0
+        }
+      }
+    },
+    {
+      "fuel": "TRANSITION",
+      "state": "CUTOFF",
+      "rpmBin": 2,
+      "loadBin": 1,
+      "count": 21,
+      "values": {
+        "rpm": {
+          "p10": 1676.0,
+          "median": 1848.0,
+          "p90": 2137.0
+        },
+        "load_bar": {
+          "p10": 0.207,
+          "median": 0.305,
+          "p90": 0.384
+        },
+        "petrol_ms": {
+          "p10": 0.0,
+          "median": 0.0,
+          "p90": 0.0
+        },
+        "gas_pressure_abs_bar": {
+          "p10": 2.47882,
+          "median": 2.54157,
+          "p90": 2.6498
+        },
+        "pressure_diff_bar": {
+          "p10": 2.09482,
+          "median": 2.23657,
+          "p90": 2.4428
+        },
+        "water_c": {
+          "p10": 38.0,
+          "median": 40.0,
+          "p90": 71.0
+        },
+        "gas_c": {
+          "p10": 41.0,
+          "median": 85.0,
+          "p90": 86.0
+        },
+        "dynamic_correction": {
+          "p10": 223.0,
+          "median": 223.0,
+          "p90": 224.0
+        }
+      }
+    },
+    {
+      "fuel": "TRANSITION",
+      "state": "OFF",
+      "rpmBin": 0,
+      "loadBin": 4,
+      "count": 129,
+      "values": {
+        "rpm": {
+          "p10": 0.0,
+          "median": 0.0,
+          "p90": 0.0
+        },
+        "load_bar": {
+          "p10": 0.982,
+          "median": 0.982,
+          "p90": 0.982
+        },
+        "petrol_ms": {
+          "p10": 0.0,
+          "median": 0.0,
+          "p90": 0.0
+        },
+        "gas_pressure_abs_bar": {
+          "p10": 2.36549,
+          "median": 2.45412,
+          "p90": 2.71059
+        },
+        "pressure_diff_bar": {
+          "p10": 1.38349,
+          "median": 1.47212,
+          "p90": 1.71859
+        },
+        "water_c": {
+          "p10": 77.0,
+          "median": 81.0,
+          "p90": 83.0
+        },
+        "gas_c": {
+          "p10": 65.0,
+          "median": 65.0,
+          "p90": 88.0
+        },
+        "dynamic_correction": {
+          "p10": 0.0,
+          "median": 0.0,
+          "p90": 0.0
+        }
+      }
+    },
+    {
+      "fuel": "PETROL",
+      "state": "LOAD",
+      "rpmBin": 1,
+      "loadBin": 2,
+      "count": 12,
+      "values": {
+        "rpm": {
+          "p10": 886.0,
+          "median": 943.0,
+          "p90": 1120.0
+        },
+        "load_bar": {
+          "p10": 0.55,
+          "median": 0.57,
+          "p90": 0.59
+        },
+        "petrol_ms": {
+          "p10": 6.208,
+          "median": 6.5152,
+          "p90": 8.57344
+        },
+        "gas_pressure_abs_bar": {
+          "p10": 2.55294,
+          "median": 2.8498,
+          "p90": 2.85882
+        },
+        "pressure_diff_bar": {
+          "p10": 2.00294,
+          "median": 2.2598,
+          "p90": 2.28725
+        },
+        "water_c": {
+          "p10": 79.0,
+          "median": 79.0,
+          "p90": 84.0
+        },
+        "gas_c": {
+          "p10": 65.0,
+          "median": 107.0,
+          "p90": 107.0
+        },
+        "dynamic_correction": {
+          "p10": 0.0,
+          "median": 0.0,
+          "p90": 0.0
+        }
+      }
+    },
+    {
+      "fuel": "PETROL",
+      "state": "LOAD",
+      "rpmBin": 1,
+      "loadBin": 3,
+      "count": 8,
+      "values": {
+        "rpm": {
+          "p10": 1041.0,
+          "median": 1260.0,
+          "p90": 1331.0
+        },
+        "load_bar": {
+          "p10": 0.609,
+          "median": 0.629,
+          "p90": 0.698
+        },
+        "petrol_ms": {
+          "p10": 7.31904,
+          "median": 8.28672,
+          "p90": 9.86368
+        },
+        "gas_pressure_abs_bar": {
+          "p10": 2.49373,
+          "median": 2.51882,
+          "p90": 2.52667
+        },
+        "pressure_diff_bar": {
+          "p10": 1.79573,
+          "median": 1.87982,
+          "p90": 1.90767
+        },
+        "water_c": {
+          "p10": 78.0,
+          "median": 80.0,
+          "p90": 80.0
+        },
+        "gas_c": {
+          "p10": 63.0,
+          "median": 64.0,
+          "p90": 65.0
+        },
+        "dynamic_correction": {
+          "p10": 0.0,
+          "median": 0.0,
+          "p90": 0.0
+        }
+      }
+    },
+    {
+      "fuel": "PETROL",
+      "state": "ACCEL",
+      "rpmBin": 4,
+      "loadBin": 2,
+      "count": 24,
+      "values": {
+        "rpm": {
+          "p10": 3215.0,
+          "median": 3235.0,
+          "p90": 3377.0
+        },
+        "load_bar": {
+          "p10": 0.413,
+          "median": 0.462,
+          "p90": 0.531
+        },
+        "petrol_ms": {
+          "p10": 4.26496,
+          "median": 4.98688,
+          "p90": 6.68672
+        },
+        "gas_pressure_abs_bar": {
+          "p10": 2.55216,
+          "median": 2.58784,
+          "p90": 2.60863
+        },
+        "pressure_diff_bar": {
+          "p10": 2.00216,
+          "median": 2.12584,
+          "p90": 2.1968
+        },
+        "water_c": {
+          "p10": 80.0,
+          "median": 80.0,
+          "p90": 81.0
+        },
+        "gas_c": {
+          "p10": 63.0,
+          "median": 63.0,
+          "p90": 64.0
+        },
+        "dynamic_correction": {
+          "p10": 0.0,
+          "median": 0.0,
+          "p90": 0.0
+        }
+      }
+    },
+    {
+      "fuel": "PETROL",
+      "state": "CRUISE",
+      "rpmBin": 3,
+      "loadBin": 0,
+      "count": 27,
+      "values": {
+        "rpm": {
+          "p10": 2272.0,
+          "median": 2415.0,
+          "p90": 2589.0
+        },
+        "load_bar": {
+          "p10": 0.178,
+          "median": 0.178,
+          "p90": 0.198
+        },
+        "petrol_ms": {
+          "p10": 1.87904,
+          "median": 2.09152,
+          "p90": 2.10432
+        },
+        "gas_pressure_abs_bar": {
+          "p10": 2.69137,
+          "median": 2.69882,
+          "p90": 2.69961
+        },
+        "pressure_diff_bar": {
+          "p10": 2.49337,
+          "median": 2.52082,
+          "p90": 2.52161
+        },
+        "water_c": {
+          "p10": 81.0,
+          "median": 83.0,
+          "p90": 84.0
+        },
+        "gas_c": {
+          "p10": 64.0,
+          "median": 64.0,
+          "p90": 65.0
+        },
+        "dynamic_correction": {
+          "p10": 0.0,
+          "median": 0.0,
+          "p90": 0.0
+        }
+      }
+    },
+    {
+      "fuel": "PETROL",
+      "state": "ACCEL",
+      "rpmBin": 4,
+      "loadBin": 3,
+      "count": 17,
+      "values": {
+        "rpm": {
+          "p10": 3109.0,
+          "median": 3355.0,
+          "p90": 3624.0
+        },
+        "load_bar": {
+          "p10": 0.629,
+          "median": 0.658,
+          "p90": 0.747
+        },
+        "petrol_ms": {
+          "p10": 7.9104,
+          "median": 8.66816,
+          "p90": 9.62048
+        },
+        "gas_pressure_abs_bar": {
+          "p10": 2.45882,
+          "median": 2.50588,
+          "p90": 2.52549
+        },
+        "pressure_diff_bar": {
+          "p10": 1.73143,
+          "median": 1.8371,
+          "p90": 1.89649
+        },
+        "water_c": {
+          "p10": 77.0,
+          "median": 81.0,
+          "p90": 84.0
+        },
+        "gas_c": {
+          "p10": 63.0,
+          "median": 64.0,
+          "p90": 83.0
+        },
+        "dynamic_correction": {
+          "p10": 0.0,
+          "median": 0.0,
+          "p90": 0.0
+        }
+      }
+    },
+    {
+      "fuel": "PETROL",
+      "state": "CRUISE",
+      "rpmBin": 4,
+      "loadBin": 2,
+      "count": 23,
+      "values": {
+        "rpm": {
+          "p10": 3035.0,
+          "median": 3090.0,
+          "p90": 3149.0
+        },
+        "load_bar": {
+          "p10": 0.433,
+          "median": 0.452,
+          "p90": 0.482
+        },
+        "petrol_ms": {
+          "p10": 4.1216,
+          "median": 4.38272,
+          "p90": 4.84352
+        },
+        "gas_pressure_abs_bar": {
+          "p10": 2.58157,
+          "median": 2.5949,
+          "p90": 2.59922
+        },
+        "pressure_diff_bar": {
+          "p10": 2.09957,
+          "median": 2.1429,
+          "p90": 2.16622
+        },
+        "water_c": {
+          "p10": 80.0,
+          "median": 81.0,
+          "p90": 81.0
+        },
+        "gas_c": {
+          "p10": 63.0,
+          "median": 64.0,
+          "p90": 64.0
+        },
+        "dynamic_correction": {
+          "p10": 0.0,
+          "median": 0.0,
+          "p90": 0.0
+        }
+      }
+    },
+    {
+      "fuel": "PETROL",
+      "state": "ACCEL",
+      "rpmBin": 4,
+      "loadBin": 4,
+      "count": 8,
+      "values": {
+        "rpm": {
+          "p10": 3061.0,
+          "median": 3229.0,
+          "p90": 3550.0
+        },
+        "load_bar": {
+          "p10": 0.805,
+          "median": 0.884,
+          "p90": 0.972
+        },
+        "petrol_ms": {
+          "p10": 9.93024,
+          "median": 12.50816,
+          "p90": 14.43072
+        },
+        "gas_pressure_abs_bar": {
+          "p10": 2.42275,
+          "median": 2.45647,
+          "p90": 2.72471
+        },
+        "pressure_diff_bar": {
+          "p10": 1.53875,
+          "median": 1.65147,
+          "p90": 1.7531
+        },
+        "water_c": {
+          "p10": 79.0,
+          "median": 80.0,
+          "p90": 82.0
+        },
+        "gas_c": {
+          "p10": 63.0,
+          "median": 64.0,
+          "p90": 98.0
+        },
+        "dynamic_correction": {
+          "p10": 0.0,
+          "median": 0.0,
+          "p90": 0.0
+        }
+      }
+    },
+    {
+      "fuel": "TRANSITION",
+      "state": "CRUISE",
+      "rpmBin": 2,
+      "loadBin": 2,
+      "count": 279,
+      "values": {
+        "rpm": {
+          "p10": 1698.0,
+          "median": 1994.0,
+          "p90": 2135.0
+        },
+        "load_bar": {
+          "p10": 0.413,
+          "median": 0.433,
+          "p90": 0.472
+        },
+        "petrol_ms": {
+          "p10": 3.85024,
+          "median": 4.1344,
+          "p90": 4.65664
+        },
+        "gas_pressure_abs_bar": {
+          "p10": 2.91922,
+          "median": 3.00627,
+          "p90": 3.01373
+        },
+        "pressure_diff_bar": {
+          "p10": 2.46251,
+          "median": 2.57327,
+          "p90": 2.60073
+        },
+        "water_c": {
+          "p10": 31.0,
+          "median": 32.0,
+          "p90": 76.0
+        },
+        "gas_c": {
+          "p10": 83.0,
+          "median": 83.0,
+          "p90": 87.0
+        },
+        "dynamic_correction": {
+          "p10": 0.0,
+          "median": 0.0,
+          "p90": 0.0
+        }
+      }
+    },
+    {
+      "fuel": "TRANSITION",
+      "state": "CRUISE",
+      "rpmBin": 2,
+      "loadBin": 1,
+      "count": 53,
+      "values": {
+        "rpm": {
+          "p10": 1621.0,
+          "median": 1764.0,
+          "p90": 1973.0
+        },
+        "load_bar": {
+          "p10": 0.276,
+          "median": 0.364,
+          "p90": 0.394
+        },
+        "petrol_ms": {
+          "p10": 2.86464,
+          "median": 3.67104,
+          "p90": 4.22144
+        },
+        "gas_pressure_abs_bar": {
+          "p10": 2.67647,
+          "median": 2.95412,
+          "p90": 3.02157
+        },
+        "pressure_diff_bar": {
+          "p10": 2.43947,
+          "median": 2.60012,
+          "p90": 2.63853
+        },
+        "water_c": {
+          "p10": 32.0,
+          "median": 76.0,
+          "p90": 76.0
+        },
+        "gas_c": {
+          "p10": 83.0,
+          "median": 87.0,
+          "p90": 87.0
+        },
+        "dynamic_correction": {
+          "p10": 0.0,
+          "median": 0.0,
+          "p90": 0.0
+        }
+      }
+    },
+    {
+      "fuel": "TRANSITION",
+      "state": "LOAD",
+      "rpmBin": 3,
+      "loadBin": 2,
+      "count": 18,
+      "values": {
+        "rpm": {
+          "p10": 2312.0,
+          "median": 2589.0,
+          "p90": 2963.0
+        },
+        "load_bar": {
+          "p10": 0.55,
+          "median": 0.55,
+          "p90": 0.58
+        },
+        "petrol_ms": {
+          "p10": 4.5952,
+          "median": 4.928,
+          "p90": 9.03936
+        },
+        "gas_pressure_abs_bar": {
+          "p10": 2.94078,
+          "median": 2.95686,
+          "p90": 2.96039
+        },
+        "pressure_diff_bar": {
+          "p10": 2.34078,
+          "median": 2.39961,
+          "p90": 2.41039
+        },
+        "water_c": {
+          "p10": 33.0,
+          "median": 33.0,
+          "p90": 37.0
+        },
+        "gas_c": {
+          "p10": 83.0,
+          "median": 83.0,
+          "p90": 83.0
+        },
+        "dynamic_correction": {
+          "p10": 0.0,
+          "median": 0.0,
+          "p90": 0.0
+        }
+      }
+    },
+    {
+      "fuel": "TRANSITION",
+      "state": "LOAD",
+      "rpmBin": 2,
+      "loadBin": 2,
+      "count": 10,
+      "values": {
+        "rpm": {
+          "p10": 1564.0,
+          "median": 2017.0,
+          "p90": 2168.0
+        },
+        "load_bar": {
+          "p10": 0.55,
+          "median": 0.57,
+          "p90": 0.59
+        },
+        "petrol_ms": {
+          "p10": 4.96384,
+          "median": 5.50144,
+          "p90": 6.11072
+        },
+        "gas_pressure_abs_bar": {
+          "p10": 2.55333,
+          "median": 2.94784,
+          "p90": 2.95333
+        },
+        "pressure_diff_bar": {
+          "p10": 2.00333,
+          "median": 2.35784,
+          "p90": 2.38333
+        },
+        "water_c": {
+          "p10": 31.0,
+          "median": 33.0,
+          "p90": 76.0
+        },
+        "gas_c": {
+          "p10": 63.0,
+          "median": 83.0,
+          "p90": 83.0
+        },
+        "dynamic_correction": {
+          "p10": 0.0,
+          "median": 0.0,
+          "p90": 0.0
+        }
+      }
+    },
+    {
+      "fuel": "CNG",
+      "state": "ACCEL",
+      "rpmBin": 5,
+      "loadBin": 2,
+      "count": 16,
+      "values": {
+        "rpm": {
+          "p10": 3796.0,
+          "median": 4097.0,
+          "p90": 4366.0
+        },
+        "load_bar": {
+          "p10": 0.443,
+          "median": 0.452,
+          "p90": 0.492
+        },
+        "petrol_ms": {
+          "p10": 5.71136,
+          "median": 6.70208,
+          "p90": 6.8736
+        },
+        "gas_ms_diagnostic": {
+          "p10": 11.22048,
+          "median": 13.48096,
+          "p90": 13.888
+        },
+        "gas_pressure_abs_bar": {
+          "p10": 2.25765,
+          "median": 2.26196,
+          "p90": 2.35804
+        },
+        "pressure_diff_bar": {
+          "p10": 1.79565,
+          "median": 1.808,
+          "p90": 1.82445
+        },
+        "water_c": {
+          "p10": 39.0,
+          "median": 39.0,
+          "p90": 48.0
+        },
+        "gas_c": {
+          "p10": 80.0,
+          "median": 84.0,
+          "p90": 84.0
+        },
+        "dynamic_correction": {
+          "p10": 216.0,
+          "median": 220.0,
+          "p90": 222.0
+        }
+      }
+    },
+    {
+      "fuel": "CNG",
+      "state": "ACCEL",
+      "rpmBin": 4,
+      "loadBin": 2,
+      "count": 30,
+      "values": {
+        "rpm": {
+          "p10": 3260.0,
+          "median": 3558.0,
+          "p90": 3689.0
+        },
+        "load_bar": {
+          "p10": 0.443,
+          "median": 0.541,
+          "p90": 0.58
+        },
+        "petrol_ms": {
+          "p10": 5.62432,
+          "median": 6.92224,
+          "p90": 8.15872
+        },
+        "gas_ms_diagnostic": {
+          "p10": 8.99328,
+          "median": 13.99296,
+          "p90": 16.48384
+        },
+        "gas_pressure_abs_bar": {
+          "p10": 2.24,
+          "median": 2.28824,
+          "p90": 2.42588
+        },
+        "pressure_diff_bar": {
+          "p10": 1.66216,
+          "median": 1.74784,
+          "p90": 1.89488
+        },
+        "water_c": {
+          "p10": 38.0,
+          "median": 50.0,
+          "p90": 77.0
+        },
+        "gas_c": {
+          "p10": 83.0,
+          "median": 84.0,
+          "p90": 112.0
+        },
+        "dynamic_correction": {
+          "p10": 216.0,
+          "median": 220.0,
+          "p90": 223.0
+        }
+      }
+    },
+    {
+      "fuel": "CNG",
+      "state": "ACCEL",
+      "rpmBin": 5,
+      "loadBin": 4,
+      "count": 70,
+      "values": {
+        "rpm": {
+          "p10": 3764.0,
+          "median": 4060.0,
+          "p90": 4422.0
+        },
+        "load_bar": {
+          "p10": 0.874,
+          "median": 0.972,
+          "p90": 0.972
+        },
+        "petrol_ms": {
+          "p10": 12.11136,
+          "median": 13.70368,
+          "p90": 14.78656
+        },
+        "gas_ms_diagnostic": {
+          "p10": 23.55456,
+          "median": 25.11104,
+          "p90": 27.02336
+        },
+        "gas_pressure_abs_bar": {
+          "p10": 2.24275,
+          "median": 2.2651,
+          "p90": 2.29412
+        },
+        "pressure_diff_bar": {
+          "p10": 1.278,
+          "median": 1.2982,
+          "p90": 1.37229
+        },
+        "water_c": {
+          "p10": 67.0,
+          "median": 72.0,
+          "p90": 81.0
+        },
+        "gas_c": {
+          "p10": 81.0,
+          "median": 91.0,
+          "p90": 118.0
+        },
+        "dynamic_correction": {
+          "p10": 216.0,
+          "median": 219.0,
+          "p90": 221.0
+        }
+      }
+    },
+    {
+      "fuel": "CNG",
+      "state": "ACCEL",
+      "rpmBin": 6,
+      "loadBin": 4,
+      "count": 14,
+      "values": {
+        "rpm": {
+          "p10": 4510.0,
+          "median": 4802.0,
+          "p90": 5025.0
+        },
+        "load_bar": {
+          "p10": 0.845,
+          "median": 0.952,
+          "p90": 0.972
+        },
+        "petrol_ms": {
+          "p10": 10.46784,
+          "median": 11.70432,
+          "p90": 12.70016
+        },
+        "gas_ms_diagnostic": {
+          "p10": 20.14976,
+          "median": 21.32224,
+          "p90": 22.5152
+        },
+        "gas_pressure_abs_bar": {
+          "p10": 2.26471,
+          "median": 2.27333,
+          "p90": 2.28078
+        },
+        "pressure_diff_bar": {
+          "p10": 1.29702,
+          "median": 1.31271,
+          "p90": 1.40953
+        },
+        "water_c": {
+          "p10": 72.0,
+          "median": 72.0,
+          "p90": 76.0
+        },
+        "gas_c": {
+          "p10": 91.0,
+          "median": 92.0,
+          "p90": 93.0
+        },
+        "dynamic_correction": {
+          "p10": 217.0,
+          "median": 218.0,
+          "p90": 220.0
+        }
+      }
+    },
+    {
+      "fuel": "TRANSITION",
+      "state": "CUTOFF",
+      "rpmBin": 3,
+      "loadBin": 1,
+      "count": 9,
+      "values": {
+        "rpm": {
+          "p10": 2330.0,
+          "median": 2827.0,
+          "p90": 2967.0
+        },
+        "load_bar": {
+          "p10": 0.207,
+          "median": 0.237,
+          "p90": 0.256
+        },
+        "petrol_ms": {
+          "p10": 0.0,
+          "median": 0.0,
+          "p90": 0.0
+        },
+        "gas_pressure_abs_bar": {
+          "p10": 2.5349,
+          "median": 2.62588,
+          "p90": 2.65804
+        },
+        "pressure_diff_bar": {
+          "p10": 2.31873,
+          "median": 2.38476,
+          "p90": 2.44104
+        },
+        "water_c": {
+          "p10": 66.0,
+          "median": 71.0,
+          "p90": 80.0
+        },
+        "gas_c": {
+          "p10": 78.0,
+          "median": 97.0,
+          "p90": 117.0
+        },
+        "dynamic_correction": {
+          "p10": 223.0,
+          "median": 223.0,
+          "p90": 224.0
+        }
+      }
+    },
+    {
+      "fuel": "CNG",
+      "state": "ACCEL",
+      "rpmBin": 5,
+      "loadBin": 3,
+      "count": 16,
+      "values": {
+        "rpm": {
+          "p10": 3752.0,
+          "median": 3856.0,
+          "p90": 4083.0
+        },
+        "load_bar": {
+          "p10": 0.668,
+          "median": 0.737,
+          "p90": 0.776
+        },
+        "petrol_ms": {
+          "p10": 8.71168,
+          "median": 9.72032,
+          "p90": 10.62912
+        },
+        "gas_ms_diagnostic": {
+          "p10": 17.6,
+          "median": 20.1216,
+          "p90": 21.15584
+        },
+        "gas_pressure_abs_bar": {
+          "p10": 2.25725,
+          "median": 2.27255,
+          "p90": 2.30471
+        },
+        "pressure_diff_bar": {
+          "p10": 1.4942,
+          "median": 1.52635,
+          "p90": 1.58925
+        },
+        "water_c": {
+          "p10": 71.0,
+          "median": 75.0,
+          "p90": 77.0
+        },
+        "gas_c": {
+          "p10": 82.0,
+          "median": 90.0,
+          "p90": 112.0
+        },
+        "dynamic_correction": {
+          "p10": 217.0,
+          "median": 220.0,
+          "p90": 221.0
+        }
+      }
+    },
+    {
+      "fuel": "TRANSITION",
+      "state": "CUTOFF",
+      "rpmBin": 4,
+      "loadBin": 0,
+      "count": 17,
+      "values": {
+        "rpm": {
+          "p10": 3127.0,
+          "median": 3264.0,
+          "p90": 3554.0
+        },
+        "load_bar": {
+          "p10": 0.149,
+          "median": 0.178,
+          "p90": 0.198
+        },
+        "petrol_ms": {
+          "p10": 0.0,
+          "median": 0.0,
+          "p90": 0.0
+        },
+        "gas_pressure_abs_bar": {
+          "p10": 2.50745,
+          "median": 2.60196,
+          "p90": 2.63333
+        },
+        "pressure_diff_bar": {
+          "p10": 2.32945,
+          "median": 2.43396,
+          "p90": 2.46533
+        },
+        "water_c": {
+          "p10": 38.0,
+          "median": 71.0,
+          "p90": 76.0
+        },
+        "gas_c": {
+          "p10": 83.0,
+          "median": 85.0,
+          "p90": 101.0
+        },
+        "dynamic_correction": {
+          "p10": 222.0,
+          "median": 223.0,
+          "p90": 224.0
+        }
+      }
+    },
+    {
+      "fuel": "CNG",
+      "state": "ACCEL",
+      "rpmBin": 6,
+      "loadBin": 2,
+      "count": 13,
+      "values": {
+        "rpm": {
+          "p10": 4583.0,
+          "median": 4919.0,
+          "p90": 5070.0
+        },
+        "load_bar": {
+          "p10": 0.443,
+          "median": 0.472,
+          "p90": 0.472
+        },
+        "petrol_ms": {
+          "p10": 6.37952,
+          "median": 6.72512,
+          "p90": 6.96832
+        },
+        "gas_ms_diagnostic": {
+          "p10": 12.42368,
+          "median": 13.2352,
+          "p90": 14.01856
+        },
+        "gas_pressure_abs_bar": {
+          "p10": 2.25373,
+          "median": 2.25647,
+          "p90": 2.26627
+        },
+        "pressure_diff_bar": {
+          "p10": 1.78133,
+          "median": 1.79075,
+          "p90": 1.81308
+        },
+        "water_c": {
+          "p10": 39.0,
+          "median": 39.0,
+          "p90": 39.0
+        },
+        "gas_c": {
+          "p10": 84.0,
+          "median": 84.0,
+          "p90": 84.0
+        },
+        "dynamic_correction": {
+          "p10": 210.0,
+          "median": 218.0,
+          "p90": 220.0
+        }
+      }
+    },
+    {
+      "fuel": "TRANSITION",
+      "state": "CUTOFF",
+      "rpmBin": 5,
+      "loadBin": 0,
+      "count": 8,
+      "values": {
+        "rpm": {
+          "p10": 3776.0,
+          "median": 4117.0,
+          "p90": 4230.0
+        },
+        "load_bar": {
+          "p10": 0.149,
+          "median": 0.149,
+          "p90": 0.178
+        },
+        "petrol_ms": {
+          "p10": 0.0,
+          "median": 0.0,
+          "p90": 0.0
+        },
+        "gas_pressure_abs_bar": {
+          "p10": 2.52863,
+          "median": 2.57137,
+          "p90": 2.59961
+        },
+        "pressure_diff_bar": {
+          "p10": 2.37063,
+          "median": 2.40904,
+          "p90": 2.44161
+        },
+        "water_c": {
+          "p10": 39.0,
+          "median": 39.0,
+          "p90": 75.0
+        },
+        "gas_c": {
+          "p10": 83.0,
+          "median": 84.0,
+          "p90": 91.0
+        },
+        "dynamic_correction": {
+          "p10": 221.0,
+          "median": 222.0,
+          "p90": 224.0
+        }
+      }
+    },
+    {
+      "fuel": "TRANSITION",
+      "state": "CRUISE",
+      "rpmBin": 3,
+      "loadBin": 2,
+      "count": 154,
+      "values": {
+        "rpm": {
+          "p10": 2296.0,
+          "median": 2502.0,
+          "p90": 2910.0
+        },
+        "load_bar": {
+          "p10": 0.423,
+          "median": 0.452,
+          "p90": 0.521
+        },
+        "petrol_ms": {
+          "p10": 3.76832,
+          "median": 4.17536,
+          "p90": 5.06624
+        },
+        "gas_pressure_abs_bar": {
+          "p10": 2.97059,
+          "median": 2.99961,
+          "p90": 3.00902
+        },
+        "pressure_diff_bar": {
+          "p10": 2.43959,
+          "median": 2.54761,
+          "p90": 2.58445
+        },
+        "water_c": {
+          "p10": 31.0,
+          "median": 33.0,
+          "p90": 36.0
+        },
+        "gas_c": {
+          "p10": 83.0,
+          "median": 83.0,
+          "p90": 83.0
+        },
+        "dynamic_correction": {
+          "p10": 0.0,
+          "median": 0.0,
+          "p90": 0.0
+        }
+      }
+    },
+    {
+      "fuel": "TRANSITION",
+      "state": "CRUISE",
+      "rpmBin": 4,
+      "loadBin": 2,
+      "count": 34,
+      "values": {
+        "rpm": {
+          "p10": 3008.0,
+          "median": 3074.0,
+          "p90": 3168.0
+        },
+        "load_bar": {
+          "p10": 0.423,
+          "median": 0.443,
+          "p90": 0.472
+        },
+        "petrol_ms": {
+          "p10": 4.1344,
+          "median": 4.66176,
+          "p90": 6.64832
+        },
+        "gas_pressure_abs_bar": {
+          "p10": 2.99059,
+          "median": 2.99961,
+          "p90": 3.0102
+        },
+        "pressure_diff_bar": {
+          "p10": 2.51859,
+          "median": 2.55661,
+          "p90": 2.5872
+        },
+        "water_c": {
+          "p10": 33.0,
+          "median": 36.0,
+          "p90": 36.0
+        },
+        "gas_c": {
+          "p10": 83.0,
+          "median": 83.0,
+          "p90": 83.0
+        },
+        "dynamic_correction": {
+          "p10": 0.0,
+          "median": 0.0,
+          "p90": 0.0
+        }
+      }
+    },
+    {
+      "fuel": "TRANSITION",
+      "state": "ACCEL",
+      "rpmBin": 4,
+      "loadBin": 2,
+      "count": 64,
+      "values": {
+        "rpm": {
+          "p10": 3215.0,
+          "median": 3344.0,
+          "p90": 3599.0
+        },
+        "load_bar": {
+          "p10": 0.413,
+          "median": 0.452,
+          "p90": 0.57
+        },
+        "petrol_ms": {
+          "p10": 4.3776,
+          "median": 5.7856,
+          "p90": 7.34208
+        },
+        "gas_pressure_abs_bar": {
+          "p10": 2.94863,
+          "median": 2.9949,
+          "p90": 3.01451
+        },
+        "pressure_diff_bar": {
+          "p10": 2.36863,
+          "median": 2.5329,
+          "p90": 2.60151
+        },
+        "water_c": {
+          "p10": 33.0,
+          "median": 35.0,
+          "p90": 37.0
+        },
+        "gas_c": {
+          "p10": 83.0,
+          "median": 83.0,
+          "p90": 83.0
+        },
+        "dynamic_correction": {
+          "p10": 0.0,
+          "median": 0.0,
+          "p90": 0.0
+        }
+      }
+    },
+    {
+      "fuel": "TRANSITION",
+      "state": "ACCEL",
+      "rpmBin": 4,
+      "loadBin": 1,
+      "count": 64,
+      "values": {
+        "rpm": {
+          "p10": 3289.0,
+          "median": 3433.0,
+          "p90": 3539.0
+        },
+        "load_bar": {
+          "p10": 0.227,
+          "median": 0.364,
+          "p90": 0.384
+        },
+        "petrol_ms": {
+          "p10": 4.07552,
+          "median": 4.48,
+          "p90": 5.7856
+        },
+        "gas_pressure_abs_bar": {
+          "p10": 3.02471,
+          "median": 3.03333,
+          "p90": 3.08275
+        },
+        "pressure_diff_bar": {
+          "p10": 2.64071,
+          "median": 2.66933,
+          "p90": 2.84575
+        },
+        "water_c": {
+          "p10": 33.0,
+          "median": 35.0,
+          "p90": 36.0
+        },
+        "gas_c": {
+          "p10": 83.0,
+          "median": 83.0,
+          "p90": 83.0
+        },
+        "dynamic_correction": {
+          "p10": 0.0,
+          "median": 0.0,
+          "p90": 0.0
+        }
+      }
+    },
+    {
+      "fuel": "TRANSITION",
+      "state": "ACCEL",
+      "rpmBin": 5,
+      "loadBin": 2,
+      "count": 11,
+      "values": {
+        "rpm": {
+          "p10": 3782.0,
+          "median": 3822.0,
+          "p90": 4039.0
+        },
+        "load_bar": {
+          "p10": 0.403,
+          "median": 0.403,
+          "p90": 0.59
+        },
+        "petrol_ms": {
+          "p10": 4.98944,
+          "median": 5.07392,
+          "p90": 8.04608
+        },
+        "gas_pressure_abs_bar": {
+          "p10": 2.94471,
+          "median": 3.01765,
+          "p90": 3.01804
+        },
+        "pressure_diff_bar": {
+          "p10": 2.35471,
+          "median": 2.61465,
+          "p90": 2.61504
+        },
+        "water_c": {
+          "p10": 33.0,
+          "median": 34.0,
+          "p90": 37.0
+        },
+        "gas_c": {
+          "p10": 83.0,
+          "median": 83.0,
+          "p90": 83.0
+        },
+        "dynamic_correction": {
+          "p10": 0.0,
+          "median": 0.0,
+          "p90": 0.0
+        }
+      }
+    },
+    {
+      "fuel": "TRANSITION",
+      "state": "ACCEL",
+      "rpmBin": 5,
+      "loadBin": 1,
+      "count": 24,
+      "values": {
+        "rpm": {
+          "p10": 3835.0,
+          "median": 3960.0,
+          "p90": 4040.0
+        },
+        "load_bar": {
+          "p10": 0.227,
+          "median": 0.364,
+          "p90": 0.394
+        },
+        "petrol_ms": {
+          "p10": 4.17536,
+          "median": 4.72832,
+          "p90": 6.7328
+        },
+        "gas_pressure_abs_bar": {
+          "p10": 3.01922,
+          "median": 3.03294,
+          "p90": 3.08667
+        },
+        "pressure_diff_bar": {
+          "p10": 2.62522,
+          "median": 2.66894,
+          "p90": 2.85967
+        },
+        "water_c": {
+          "p10": 34.0,
+          "median": 34.0,
+          "p90": 34.0
+        },
+        "gas_c": {
+          "p10": 83.0,
+          "median": 83.0,
+          "p90": 83.0
+        },
+        "dynamic_correction": {
+          "p10": 0.0,
+          "median": 0.0,
+          "p90": 0.0
+        }
+      }
+    },
+    {
+      "fuel": "TRANSITION",
+      "state": "CRUISE",
+      "rpmBin": 4,
+      "loadBin": 1,
+      "count": 25,
+      "values": {
+        "rpm": {
+          "p10": 3035.0,
+          "median": 3095.0,
+          "p90": 3174.0
+        },
+        "load_bar": {
+          "p10": 0.207,
+          "median": 0.266,
+          "p90": 0.354
+        },
+        "petrol_ms": {
+          "p10": 2.97728,
+          "median": 4.89472,
+          "p90": 6.3872
+        },
+        "gas_pressure_abs_bar": {
+          "p10": 3.03294,
+          "median": 3.0749,
+          "p90": 3.0949
+        },
+        "pressure_diff_bar": {
+          "p10": 2.66894,
+          "median": 2.8089,
+          "p90": 2.8879
+        },
+        "water_c": {
+          "p10": 34.0,
+          "median": 36.0,
+          "p90": 37.0
+        },
+        "gas_c": {
+          "p10": 83.0,
+          "median": 83.0,
+          "p90": 83.0
+        },
+        "dynamic_correction": {
+          "p10": 0.0,
+          "median": 0.0,
+          "p90": 0.0
+        }
+      }
+    },
+    {
+      "fuel": "TRANSITION",
+      "state": "LOAD",
+      "rpmBin": 3,
+      "loadBin": 3,
+      "count": 18,
+      "values": {
+        "rpm": {
+          "p10": 2470.0,
+          "median": 2814.0,
+          "p90": 2932.0
+        },
+        "load_bar": {
+          "p10": 0.609,
+          "median": 0.639,
+          "p90": 0.688
+        },
+        "petrol_ms": {
+          "p10": 5.67552,
+          "median": 8.00768,
+          "p90": 10.05056
+        },
+        "gas_pressure_abs_bar": {
+          "p10": 2.90588,
+          "median": 2.92314,
+          "p90": 2.93725
+        },
+        "pressure_diff_bar": {
+          "p10": 2.21788,
+          "median": 2.27492,
+          "p90": 2.32825
+        },
+        "water_c": {
+          "p10": 34.0,
+          "median": 35.0,
+          "p90": 37.0
+        },
+        "gas_c": {
+          "p10": 83.0,
+          "median": 83.0,
+          "p90": 83.0
+        },
+        "dynamic_correction": {
+          "p10": 0.0,
+          "median": 0.0,
+          "p90": 0.0
+        }
+      }
+    },
+    {
+      "fuel": "TRANSITION",
+      "state": "LOAD",
+      "rpmBin": 4,
+      "loadBin": 3,
+      "count": 8,
+      "values": {
+        "rpm": {
+          "p10": 3022.0,
+          "median": 3088.0,
+          "p90": 3163.0
+        },
+        "load_bar": {
+          "p10": 0.609,
+          "median": 0.619,
+          "p90": 0.688
+        },
+        "petrol_ms": {
+          "p10": 5.77024,
+          "median": 6.9632,
+          "p90": 8.02816
+        },
+        "gas_pressure_abs_bar": {
+          "p10": 2.90588,
+          "median": 2.92549,
+          "p90": 2.93608
+        },
+        "pressure_diff_bar": {
+          "p10": 2.21788,
+          "median": 2.28649,
+          "p90": 2.3259
+        },
+        "water_c": {
+          "p10": 35.0,
+          "median": 35.0,
+          "p90": 37.0
+        },
+        "gas_c": {
+          "p10": 83.0,
+          "median": 83.0,
+          "p90": 83.0
+        },
+        "dynamic_correction": {
+          "p10": 0.0,
+          "median": 0.0,
+          "p90": 0.0
+        }
+      }
+    }
+  ]
+}

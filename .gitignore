@@ -1,0 +1,14 @@
+# Dados gerados em cada ensaio: ficam locais, fora do codigo do laboratorio.
+Sessoes/
+Capturas/Historico/
+Capturas/Teste-*/
+Capturas/*.log
+Capturas/*.json
+
+# Pacotes de distribuicao sao gerados localmente a partir da arvore versionada.
+*.zip
+__pycache__/
+*.pyc
+
+# Estado transitório do motor virtual.
+Capturas/estado-interativo.json
