@@ -21,6 +21,7 @@ $script:plant = [ordered]@{ running=$false; rpm=0.0; mapBar=0.28; petrolMs=0.0; 
 $script:campaign = $null
 $script:replay = $null
 $script:autoCalSession = $null
+$script:bootSpy = $false
 $script:behaviorModelPath = Join-Path $laboratoryRoot 'Dados\modelo-comportamental.json'
 $script:behaviorBuckets = @()
 $script:behaviorModelStatus = 'Fallback interno: modelo comportamental indisponivel.'
@@ -363,8 +364,15 @@ function Update-Plant {
 function Publish-State($state) {
     [IO.Directory]::CreateDirectory((Split-Path $script:statePath -Parent)) | Out-Null
     $script:stateSequence++
-    $state['sequence'] = $script:stateSequence
-    $state['publishedAt'] = [DateTimeOffset]::Now.ToString('o')
+    if ($state -is [Collections.IDictionary]) {
+        $state['bootSpy'] = $script:bootSpy
+        $state['sequence'] = $script:stateSequence
+        $state['publishedAt'] = [DateTimeOffset]::Now.ToString('o')
+    } else {
+        $state | Add-Member -NotePropertyName bootSpy -NotePropertyValue $script:bootSpy -Force
+        $state | Add-Member -NotePropertyName sequence -NotePropertyValue $script:stateSequence -Force
+        $state | Add-Member -NotePropertyName publishedAt -NotePropertyValue ([DateTimeOffset]::Now.ToString('o')) -Force
+    }
     $temp="$script:statePath.tmp"; $state | ConvertTo-Json | Set-Content -LiteralPath $temp -Encoding UTF8; Move-Item $temp $script:statePath -Force
     if (([DateTime]::UtcNow - $script:lastSnapshotAt).TotalSeconds -ge 1) {
         Write-LabEvent @{ type='state-snapshot'; state=$state }
@@ -382,11 +390,11 @@ function Get-ProtocolSummary {
     $events = @(Read-JsonLines (Join-Path $script:sessionRoot 'protocol-events.jsonl'))
     $transactions = @($events | Where-Object { $_.type -eq 'transaction' })
     $last = $transactions | Select-Object -Last 1
-    $unknown = @($transactions | Where-Object { $_.source -eq 'generic-ack' }).Count
+    $unknown = @($transactions | Where-Object { $_.source -in @('generic-ack','boot-spy-unmapped') }).Count
     if ($null -eq $last) {
         $script:lastProtocolSummary = [ordered]@{ last='Aguardando a primeira leitura do ProgBase'; source=''; transactions=0; unknown=0 }
     } else {
-        $description = if ($last.request -like '29 61 01*') { 'Leitura da Curva K (MUL_ACT)' } elseif ($last.request -like '48 01 49*') { 'Leitura de telemetria' } elseif ($last.source -eq 'virtual-autocal-reset') { 'Reset AutoCal aplicado na ECU virtual' } elseif ($last.source -eq 'virtual-automatch-hypothesis') { 'AutoMatch experimental aplicou uma Curva K virtual' } elseif ($last.source -eq 'virtual-write') { 'Escrita aplicada na memoria da ECU virtual' } elseif ($last.source -eq 'generic-ack') { 'Comando ainda nao mapeado' } else { 'Leitura ou resposta do protocolo' }
+        $description = if ($last.request -like '29 61 01*') { 'Leitura da Curva K (MUL_ACT)' } elseif ($last.request -like '48 01 49*') { 'Leitura de telemetria' } elseif ($last.source -eq 'virtual-autocal-reset') { 'Reset AutoCal aplicado na ECU virtual' } elseif ($last.source -eq 'virtual-automatch-hypothesis') { 'AutoMatch experimental aplicou uma Curva K virtual' } elseif ($last.source -eq 'virtual-write') { 'Escrita aplicada na memoria da ECU virtual' } elseif ($last.source -eq 'boot-spy-known') { 'Boot Spy: etapa de programacao reconhecida' } elseif ($last.source -eq 'boot-spy-unmapped') { 'Boot Spy: novo quadro capturado sem resposta inventada' } elseif ($last.source -eq 'generic-ack') { 'Comando ainda nao mapeado' } else { 'Leitura ou resposta do protocolo' }
         $script:lastProtocolSummary = [ordered]@{ last=$description; source=$last.source; transactions=$transactions.Count; unknown=$unknown }
     }
     return $script:lastProtocolSummary
@@ -401,9 +409,12 @@ function Write-SessionSummary {
     $labEvents = @(Read-JsonLines $script:sessionEventsPath)
     $protocolEvents = @(Read-JsonLines (Join-Path $script:sessionRoot 'protocol-events.jsonl'))
     $transactions = @($protocolEvents | Where-Object { $_.type -eq 'transaction' })
-    $unknown = @($transactions | Where-Object { $_.source -eq 'generic-ack' })
+    $unknown = @($transactions | Where-Object { $_.source -in @('generic-ack','boot-spy-unmapped') })
     $virtualWrites = @($transactions | Where-Object { $_.source -eq 'virtual-write' })
     $virtualResets = @($transactions | Where-Object { $_.source -eq 'virtual-autocal-reset' })
+    $bootRaw = @($protocolEvents | Where-Object { $_.type -eq 'boot-raw' })
+    $bootKnown = @($transactions | Where-Object { $_.source -eq 'boot-spy-known' })
+    $bootUnmapped = @($transactions | Where-Object { $_.source -eq 'boot-spy-unmapped' })
     $requests = @($transactions | Group-Object request | Sort-Object Count -Descending | Select-Object -First 40)
     $markers = @($labEvents | Where-Object { $_.type -eq 'marker' })
     $lines = [Collections.Generic.List[string]]::new()
@@ -414,6 +425,9 @@ function Write-SessionSummary {
     $lines.Add("- Alteracoes manuais mantidas na ECU virtual: $($virtualWrites.Count)")
     $lines.Add("- Resets AutoCal aplicados na ECU virtual: $($virtualResets.Count)")
     $lines.Add("- Pedidos sem resposta observada (ACK generico): $($unknown.Count)"); $lines.Add('')
+    $lines.Add("- Quadros brutos do Boot Spy: $($bootRaw.Count)")
+    $lines.Add("- Etapas de boot reconhecidas: $($bootKnown.Count)")
+    $lines.Add("- Quadros de boot ainda sem mapa: $($bootUnmapped.Count)"); $lines.Add('')
     $lines.Add('## Marcadores do experimento')
     if ($markers.Count -eq 0) { $lines.Add('- Nenhum marcador manual foi criado.') } else { foreach($marker in $markers) { $lines.Add("- $($marker.timestamp): $($marker.note)") } }
     $lines.Add(''); $lines.Add('## Pedidos mais frequentes'); $lines.Add('')
@@ -426,6 +440,8 @@ function Write-SessionSummary {
     $lines.Add('- `virtual-autocal-reset`: limpeza virtual dos buffers AutoCal. A acao foi entendida e aplicada no estado da bancada.')
     $lines.Add('- `virtual-automatch-hypothesis`: atualizacao experimental da Curva K virtual por comparacao horizontal das curvas de retorno. Nao e uma alegacao de formula original Landi.')
     $lines.Add('- `generic-ack`: pedido ainda sem resposta real mapeada. E uma lacuna para investigar, nao um dado da ECU.')
+    $lines.Add('- `boot-spy-known`: sentinela de programacao comprovada; a ECU virtual somente confirmou a etapa e registrou tudo.')
+    $lines.Add('- `boot-spy-unmapped`: quadro recebido durante o Boot Spy e recusado explicitamente; ele deve ser estudado antes de qualquer resposta de compatibilidade.')
     [IO.File]::WriteAllLines((Join-Path $script:sessionRoot 'RESUMO.md'), $lines, [Text.Encoding]::UTF8)
 }
 
@@ -493,8 +509,9 @@ $quickAfter=New-Object Windows.Forms.Button; $quickAfter.Text='Depois'; $quickAf
 $importButton=New-Object Windows.Forms.Button; $importButton.Text='Importar logs'; $importButton.Location='18,284'; $importButton.Size='150,29'; $experimentPane.Controls.Add($importButton)
 $replayButton=New-Object Windows.Forms.Button; $replayButton.Text='Loop importado'; $replayButton.Location='180,284'; $replayButton.Size='173,29'; $replayButton.Enabled=$false; $experimentPane.Controls.Add($replayButton)
 $timelineTitle=Add-Label 'Cronologia desta sessao' 18 318 320 22 (New-Object Drawing.Font('Segoe UI',10,[Drawing.FontStyle]::Bold))
-$timeline=Add-Label 'Sessao iniciando...' 18 344 335 70; $timeline.ForeColor=[Drawing.Color]::Silver
-$sessionLabel=Add-Label 'Sessao: preparando...' 18 420 335 42; $sessionLabel.ForeColor=[Drawing.Color]::DarkGray
+$timeline=Add-Label 'Sessao iniciando...' 18 344 335 48; $timeline.ForeColor=[Drawing.Color]::Silver
+$bootSpyToggle=New-Object Windows.Forms.CheckBox; $bootSpyToggle.Text='Boot Spy (F5) - capturar programacao'; $bootSpyToggle.Location='18,398'; $bootSpyToggle.Size='335,26'; $bootSpyToggle.ForeColor=[Drawing.Color]::Khaki; $bootSpyToggle.UseVisualStyleBackColor=$false; $experimentPane.Controls.Add($bootSpyToggle)
+$sessionLabel=Add-Label 'Sessao: preparando...' 18 426 335 38; $sessionLabel.ForeColor=[Drawing.Color]::DarkGray
 $openSessionButton=New-Object Windows.Forms.Button; $openSessionButton.Text='Abrir arquivos da sessao'; $openSessionButton.Location='18,468'; $openSessionButton.Size='165,31'; $experimentPane.Controls.Add($openSessionButton)
 $newSessionButton=New-Object Windows.Forms.Button; $newSessionButton.Text='Novo ensaio'; $newSessionButton.Location='190,468'; $newSessionButton.Size='163,31'; $experimentPane.Controls.Add($newSessionButton)
 $campaignButton=New-Object Windows.Forms.Button; $campaignButton.Text='Rodar 1.000 cenarios'; $campaignButton.Location='18,504'; $campaignButton.Size='170,31'; $experimentPane.Controls.Add($campaignButton)
@@ -520,6 +537,12 @@ $markButton.Add_Click({ $note=$noteBox.Text.Trim(); if([string]::IsNullOrWhiteSp
 $quickPre.Add_Click({Add-QuickMarker 'Antes da acao no ProgBase'})
 $quickAction.Add_Click({Add-QuickMarker 'Acao executada no ProgBase'})
 $quickAfter.Add_Click({Add-QuickMarker 'Depois da acao no ProgBase'})
+$bootSpyToggle.Add_CheckedChanged({
+    $script:bootSpy=$bootSpyToggle.Checked
+    $state=Update-Plant; Publish-State $state
+    Write-LabEvent @{type='boot-spy'; enabled=$script:bootSpy; state=$state}
+    $status.Text=if($script:bootSpy){'Boot Spy ativo. No ProgBase, abra F5 e inicie a programacao para registrar cada etapa.'}else{'Boot Spy desligado. A ECU virtual voltou ao modo normal.'}
+}.GetNewClosure())
 $importButton.Add_Click({ Import-ReplayFiles })
 $replayButton.Add_Click({ if($null -eq $script:replay){ Start-LogReplay; $replayButton.Text='Loop em andamento'; $campaignButton.Enabled=$false; $stopCampaignButton.Enabled=$true } })
 $newSessionButton.Add_Click({ Stop-ProgBaseCampaign 'nova-sessao'; Stop-LogReplay 'nova-sessao'; Stop-VirtualAutoCalSession 'nova-sessao'; Write-SessionSummary; Start-NewSession; $status.Text='Novo ensaio iniciado.' })

@@ -51,6 +51,15 @@ function New-AckFrame([byte[]]$Payload = [byte[]]::new(0)) {
     return $frame.ToArray()
 }
 
+function New-NackFrame([byte]$Code = 0x10) {
+    # CA 01 10 DB is the documented "unavailable" response.  In Boot Spy
+    # mode it is deliberately preferable to a generic ACK: an invented OK
+    # would make ProgBase advance through a protocol we have not observed.
+    $frame = [byte[]]@(0xCA, 0x01, $Code, 0x00)
+    Update-ResponseChecksum $frame
+    return $frame
+}
+
 function Set-U16Le([byte[]]$Bytes, [int]$Offset, [int]$Value) {
     $Bytes[$Offset] = [byte]($Value -band 0xFF)
     $Bytes[$Offset + 1] = [byte](($Value -shr 8) -band 0xFF)
@@ -416,7 +425,7 @@ function New-ScenarioTelemetry([string]$Name, [int]$Tick) {
     return New-AckFrame $payload
 }
 
-function New-InteractiveTelemetry([string]$Path) {
+function Refresh-InteractiveState([string]$Path) {
     # Always read the latest published state. Depending only on the file time
     # made a running laboratory appear frozen on systems whose timestamps do
     # not advance between two quick atomic replacements.
@@ -435,7 +444,16 @@ function New-InteractiveTelemetry([string]$Path) {
         # previous valid state; never pause serial telemetry for a UI write.
         Write-Log "interactive-state-read-error=$($_.Exception.Message)"
     }
-    $state = $script:InteractiveState
+    return $script:InteractiveState
+}
+
+function Get-BootSpyEnabled([string]$Path) {
+    $state = Refresh-InteractiveState $Path
+    return ($null -ne $state -and $null -ne $state.bootSpy -and [bool]$state.bootSpy)
+}
+
+function New-InteractiveTelemetry([string]$Path) {
+    $state = Refresh-InteractiveState $Path
     if ($null -eq $state) {
         return New-ScenarioTelemetry 'idle-cng' 0
     }
@@ -462,6 +480,35 @@ function New-InteractiveTelemetry([string]$Path) {
     Set-U16Le $payload 24 $gas
     Set-U16Le $payload 28 $petrol
     return New-AckFrame $payload
+}
+
+function Apply-VirtualBootSpy([byte[]]$Request, [bool]$Enabled) {
+    if (-not $Enabled) {
+        return $null
+    }
+
+    $key = Convert-BytesToHex $Request
+    $action = switch ($key) {
+        '00 09 09' { 'cancel-flash' }
+        '00 0A 0A' { 'exit-boot' }
+        '00 0B 0B' { 'force-exit-boot' }
+        '93 93' { 'start-flash' }
+        '85 85' { 'end-flash' }
+        default { '' }
+    }
+    if ([string]::IsNullOrWhiteSpace($action)) {
+        return @{ target = 'BOOT_SPY'; known = $false; action = 'unmapped'; mode = $script:VirtualBoot.mode }
+    }
+
+    switch ($action) {
+        'cancel-flash' { $script:VirtualBoot.mode = 'boot-waiting' }
+        'exit-boot' { $script:VirtualBoot.mode = 'application' }
+        'force-exit-boot' { $script:VirtualBoot.mode = 'application' }
+        'start-flash' { $script:VirtualBoot.mode = 'flash-receiving'; $script:VirtualBoot.records = 0 }
+        'end-flash' { $script:VirtualBoot.mode = 'boot-waiting' }
+    }
+    $script:VirtualBoot.frames++
+    return @{ target = 'BOOT_SPY'; known = $true; action = $action; mode = $script:VirtualBoot.mode; frames = $script:VirtualBoot.frames }
 }
 
 function Import-ObservedResponses([string]$Path) {
@@ -499,6 +546,15 @@ function Get-NextRequest(
     # the stream begins 00 00 02 02; discard only the first wake byte.
     while ($Buffer.Count -ge 2 -and $Buffer[0] -eq 0x00 -and $Buffer[1] -eq 0x00) {
         $Buffer.RemoveAt(0)
+    }
+    # Two documented boot/flash sentinels have no length/checksum wrapper.
+    # Recognise only those exact pairs before applying normal frame parsing.
+    foreach ($bootPair in @('93 93', '85 85')) {
+        $bytes = Convert-HexToBytes $bootPair
+        if ($Buffer.Count -ge $bytes.Length -and $Buffer[0] -eq $bytes[0] -and $Buffer[1] -eq $bytes[1]) {
+            $Buffer.RemoveRange(0, $bytes.Length)
+            return $bytes
+        }
     }
     if ($Buffer.Count -lt 3) {
         return $null
@@ -560,6 +616,7 @@ $script:ResolvedMemoryPath = if ([string]::IsNullOrWhiteSpace($MemoryPath)) { ''
 $script:VirtualMemory = Initialize-VirtualMemory $responses $script:ResolvedMemoryPath
 Sync-VirtualMemoryToResponses $responses
 Apply-PersistedAutoCalReset
+$script:VirtualBoot = [ordered]@{ mode = 'application'; frames = 0; records = 0 }
 $script:ScenarioTick = 0
 $script:InteractiveState = $null
 $script:InteractiveStateStamp = $null
@@ -610,6 +667,14 @@ if ($SelfTest) {
     if ((Convert-BytesToHex $parsed) -ne '00 02 02') {
         throw 'Parser nao removeu wake byte corretamente'
     }
+    $bootBuffer = [Collections.Generic.List[byte]]::new()
+    foreach ($value in (Convert-HexToBytes '93 93')) { $bootBuffer.Add($value) }
+    $bootStart = Get-NextRequest $bootBuffer $responses
+    if ((Convert-BytesToHex $bootStart) -ne '93 93') { throw 'Parser nao reconheceu o sentinela de inicio do flash' }
+    $bootAction = Apply-VirtualBootSpy $bootStart $true
+    if ($null -eq $bootAction -or -not $bootAction.known -or $bootAction.mode -ne 'flash-receiving') { throw 'Boot Spy nao entrou no estado de recepcao virtual' }
+    $bootUnknown = Apply-VirtualBootSpy (Convert-HexToBytes '12 34 46') $true
+    if ($null -eq $bootUnknown -or $bootUnknown.known -or -not (Test-RequestChecksum (New-NackFrame))) { throw 'Boot Spy nao sinalizou comando desconhecido com NACK valido' }
     $autoMatch = Apply-VirtualAutoMatch (Convert-HexToBytes '02 24 04 08 32')
     if ($null -eq $autoMatch -or $autoMatch.target -ne 'AUTOMATCH_HYPOTHESIS' -or $autoMatch.changed -le 0) {
         throw 'AutoMatch experimental nao atualizou a Curva K virtual'
@@ -669,8 +734,13 @@ while ($true) {
             if ($count -le 0) {
                 break
             }
-            $buffer.AddRange([byte[]]$readBuffer[0..($count - 1)])
-            Write-Log "rx-chunk length=$count hex=$(Convert-BytesToHex ([byte[]]$readBuffer[0..($count - 1)]))"
+            $chunk = [byte[]]$readBuffer[0..($count - 1)]
+            $buffer.AddRange($chunk)
+            Write-Log "rx-chunk length=$count hex=$(Convert-BytesToHex $chunk)"
+            $bootSpyEnabled = ($Scenario -eq 'interactive' -and (Get-BootSpyEnabled $ScenarioFile))
+            if ($bootSpyEnabled) {
+                Write-SessionEvent @{ type = 'boot-raw'; direction = 'TX'; frame = (Convert-BytesToHex $chunk); bytes = $chunk.Length; bootMode = $script:VirtualBoot.mode }
+            }
 
             while ($true) {
                 $request = Get-NextRequest $buffer $responses
@@ -678,11 +748,23 @@ while ($true) {
                     break
                 }
                 $requestKey = Convert-BytesToHex $request
+                $bootSpyEnabled = ($Scenario -eq 'interactive' -and (Get-BootSpyEnabled $ScenarioFile))
+                $bootResult = Apply-VirtualBootSpy $request $bootSpyEnabled
                 $virtualWrite = Apply-VirtualWrite $request
-                if ($null -eq $virtualWrite) { $virtualWrite = Apply-VirtualAutoCalReset $request }
-                if ($null -eq $virtualWrite) { $virtualWrite = Apply-VirtualAutoCalEnable $request }
-                if ($null -eq $virtualWrite) { $virtualWrite = Apply-VirtualAutoMatch $request }
-                if ($null -ne $virtualWrite) {
+                if ($null -ne $bootResult -and $bootResult.known) {
+                    $response = New-AckFrame
+                    $source = 'boot-spy-known'
+                } elseif ($null -ne $bootResult -and -not $bootResult.known -and -not $responses.ContainsKey($requestKey)) {
+                    $response = New-NackFrame
+                    $source = 'boot-spy-unmapped'
+                } else {
+                    if ($null -eq $virtualWrite) { $virtualWrite = Apply-VirtualAutoCalReset $request }
+                    if ($null -eq $virtualWrite) { $virtualWrite = Apply-VirtualAutoCalEnable $request }
+                    if ($null -eq $virtualWrite) { $virtualWrite = Apply-VirtualAutoMatch $request }
+                }
+                if ($null -ne $bootResult -and ($bootResult.known -or (-not $bootResult.known -and -not $responses.ContainsKey($requestKey)))) {
+                    # Response and source were intentionally assigned above.
+                } elseif ($null -ne $virtualWrite) {
                     $response = New-AckFrame
                     $source = if ($virtualWrite.target -eq 'AUTOCAL_RESET') { 'virtual-autocal-reset' } elseif ($virtualWrite.target -eq 'AUTOCAL_ENABLE') { 'virtual-autocal-enable' } elseif ($virtualWrite.target -eq 'AUTOMATCH_HYPOTHESIS') { 'virtual-automatch-hypothesis' } else { 'virtual-write' }
                 } elseif ($requestKey -eq '48 01 49' -and $Scenario -ne 'captured') {
@@ -711,11 +793,15 @@ while ($true) {
                 Write-Log "transaction request=$requestKey source=$source response=$(Convert-BytesToHex $response)"
                 $event = @{ type = 'transaction'; request = $requestKey; source = $source; response = (Convert-BytesToHex $response); scenario = $Scenario }
                 if ($null -ne $virtualWrite) { $event.virtualWrite = $virtualWrite }
+                if ($null -ne $bootResult) { $event.bootSpy = $bootResult }
                 if ($Scenario -eq 'interactive' -and $null -ne $script:InteractiveState) {
                     $event.state = $script:InteractiveState
                     $event.stateSequence = $script:InteractiveStateSequence
                 }
                 Write-SessionEvent $event
+                if ($bootSpyEnabled) {
+                    Write-SessionEvent @{ type = 'boot-raw'; direction = 'RX'; request = $requestKey; frame = (Convert-BytesToHex $response); bytes = $response.Length; source = $source; bootMode = $script:VirtualBoot.mode }
+                }
             }
         }
     }

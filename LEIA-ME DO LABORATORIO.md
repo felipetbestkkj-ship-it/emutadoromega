@@ -27,6 +27,17 @@ Os botoes **Limpar pontos de gasolina**, **Limpar pontos de GNV** e **Reset tota
 
 Para manter uma rotacao especifica durante um ensaio, marque **Fixar RPM** e arraste o controle ate o valor desejado. Enquanto estiver marcado, a RPM fica sob seu controle; pedal e carga continuam definindo o restante do comportamento. Ao escolher um cenario pronto, o modo fixo e desligado para o cenario funcionar normalmente.
 
+## Programacao e Boot Spy
+
+Para estudar o caminho de programacao do ProgBase, marque **Boot Spy (F5)** no painel `ENSAIO` e entao abra **F5 - Programmazione centralina** no ProgBase. O motor virtual passa a registrar cada quadro bruto recebido e devolve sucesso somente para as cinco etapas ja comprovadas:
+
+- cancelar flash (`00 09 09`);
+- sair do boot (`00 0A 0A` e `00 0B 0B`);
+- iniciar flash (`93 93`);
+- finalizar flash (`85 85`).
+
+Qualquer quadro novo recebe uma recusa explicita e fica salvo como `boot-spy-unmapped`; isto e proposital. Assim nao confundimos uma resposta inventada com um comportamento verdadeiro do bootloader. Ao encerrar o ensaio, abra a pasta da sessao: `protocol-events.jsonl` guarda TX/RX e `RESUMO.md` contabiliza os quadros de boot. O Boot Spy revela a linguagem usada pelo ProgBase para programar a ECU virtual; ele nao extrai, por si so, o codigo residente do bootloader.
+
 ## Controles acoplados
 
 - **Coerente** (padrao): usa o padrao comportamental mais compativel e ajusta os sinais juntos.
