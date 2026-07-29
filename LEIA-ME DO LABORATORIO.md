@@ -2,6 +2,8 @@
 
 Abra somente `Iniciar Omegas Lab.cmd`.
 
+Com o ProgBase ja conectado, use **Rodar 1.000 cenarios** no painel `ENSAIO` — ou abra `Executar 1000 ensaios.cmd`. A campanha publica mil estados coerentes do modelo enquanto preserva a conexao atual ProgBase → ECU virtual. Ao final, `CAMPANHA_PROGBASE.md` mostra quais pedidos o ProgBase realmente fez em cada faixa de estados. Nenhuma acao fisica e envolvida: escritas, resets e AutoMatch experimental permanecem dentro da memoria da ECU virtual.
+
 O laboratorio cria uma pasta propria em `Sessoes` para cada ensaio. Nela ficam o estado enviado a ECU virtual, o trafego serial, os eventos e o resumo do que aconteceu. A ECU fisica nunca e acessada.
 
 Esta pasta e autossuficiente: o catalogo de respostas observadas utilizado pelo emulador fica em `Dados`. As sessoes e capturas historicas ficam locais e nao fazem parte da sincronizacao com o repositorio, para que o codigo do laboratorio permaneça leve e reproduzivel.

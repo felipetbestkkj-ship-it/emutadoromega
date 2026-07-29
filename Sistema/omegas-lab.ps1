@@ -1,3 +1,5 @@
+param([switch]$IniciarCampanha)
+
 Add-Type -AssemblyName System.Windows.Forms
 Add-Type -AssemblyName System.Drawing
 
@@ -16,6 +18,7 @@ $script:sessionStartedAt = $null
 $script:lastProtocolScanAt = [DateTime]::MinValue
 $script:lastProtocolSummary = [ordered]@{ last='Aguardando o ProgBase'; source=''; transactions=0; unknown=0 }
 $script:plant = [ordered]@{ running=$false; rpm=0.0; mapBar=0.28; petrolMs=0.0; gasMs=0.0; waterC=24.0; gasC=24.0; pressureBar=1.10; correction=0.0; level=68.0; stableSince=$null }
+$script:campaign = $null
 $script:behaviorModelPath = Join-Path $laboratoryRoot 'Dados\modelo-comportamental.json'
 $script:behaviorBuckets = @()
 $script:behaviorModelStatus = 'Fallback interno: modelo comportamental indisponivel.'
@@ -137,6 +140,75 @@ function Get-ModelValue($Bucket, [string]$Name, [double]$Fallback, [double]$Nois
     $phase = [Math]::Sin(($script:stateSequence + $Name.Length * 17) / 19.0)
     return $mid + ($phase * $span * $variation)
 }
+function Get-CampaignValue($Bucket, [string]$Name, [int]$Index) {
+    $range = $Bucket.values.$Name
+    if ($null -eq $range) { return 0.0 }
+    switch ($Index % 3) { 0 { return [double]$range.p10 } 1 { return [double]$range.median } default { return [double]$range.p90 } }
+}
+function New-CampaignState {
+    $campaign = $script:campaign
+    $bucket = $script:behaviorBuckets[$campaign.index % $script:behaviorBuckets.Count]
+    $fuel = switch ([string]$bucket.fuel) { 'PETROL' { 'PETROL' } 'TRANSITION' { 'TRANSITION' } default { 'CNG' } }
+    $stateName = [string]$bucket.state
+    $petrol = [Math]::Round((Get-CampaignValue $bucket 'petrol_ms' $campaign.index), 2)
+    $gas = [Math]::Round((Get-CampaignValue $bucket 'gas_ms_diagnostic' $campaign.index), 2)
+    if ($fuel -eq 'PETROL') { $gas = 0 }
+    if ($stateName -eq 'CUTOFF') { $petrol = [Math]::Min(0.5, $petrol); $gas = 0 }
+    return [ordered]@{
+        rpm = [int][Math]::Round((Get-CampaignValue $bucket 'rpm' $campaign.index))
+        petrolMs = $petrol; gasMs = $gas
+        mapBar = [Math]::Round((Get-CampaignValue $bucket 'load_bar' $campaign.index), 3)
+        pressureBar = [Math]::Round((Get-CampaignValue $bucket 'gas_pressure_abs_bar' $campaign.index), 3)
+        waterC = [int][Math]::Round((Get-CampaignValue $bucket 'water_c' $campaign.index))
+        gasC = [int][Math]::Round((Get-CampaignValue $bucket 'gas_c' $campaign.index))
+        levelPercent = 68
+        dynamicCorrection = [int][Math]::Round((Get-CampaignValue $bucket 'dynamic_correction' $campaign.index))
+        fuel = $fuel; cutoff = ($stateName -eq 'CUTOFF')
+        stable = ($fuel -eq 'CNG' -and $stateName -in @('CRUISE','LOAD'))
+        stableSeconds = 0; behaviorState = $stateName; manualRpm = $false; requestedRpm = 0
+        modelBucket = "$($bucket.fuel)/$($bucket.state)/$($bucket.rpmBin)/$($bucket.loadBin)"
+        modelStatus = "Campanha automatica: modelo estatistico / $($campaign.index + 1) de $($campaign.total)"
+        campaign = 'progbase-observation-v1'
+    }
+}
+function Write-CampaignReport {
+    if ($null -eq $script:campaign -or [string]::IsNullOrWhiteSpace($script:sessionRoot)) { return }
+    $events = @(Read-JsonLines (Join-Path $script:sessionRoot 'protocol-events.jsonl') | Where-Object {
+        $_.type -eq 'transaction' -and $null -ne $_.stateSequence -and [int64]$_.stateSequence -ge $script:campaign.startSequence -and [int64]$_.stateSequence -le $script:campaign.endSequence
+    })
+    $telemetry = @($events | Where-Object { $_.request -eq '48 01 49' })
+    $actions = @($events | Where-Object { $_.source -in @('virtual-write','virtual-autocal-reset','virtual-automatch-hypothesis') })
+    $requests = @($events | Group-Object request | Sort-Object Count -Descending | Select-Object -First 25)
+    $lines = [Collections.Generic.List[string]]::new()
+    $lines.Add('# Campanha de observacao do ProgBase'); $lines.Add('')
+    $lines.Add("- Estados publicados: **$($script:campaign.total)**")
+    $lines.Add("- Periodo: sequencias $($script:campaign.startSequence) a $($script:campaign.endSequence)")
+    $lines.Add("- Pedidos reais observados do ProgBase: **$($events.Count)**")
+    $lines.Add("- Leituras de telemetria observadas: **$($telemetry.Count)**")
+    $lines.Add("- Acoes virtuais observadas: **$($actions.Count)**")
+    $lines.Add(''); $lines.Add('## Pedidos observados'); $lines.Add('')
+    $lines.Add('| Pedido | Vezes |'); $lines.Add('|---|---:|')
+    foreach ($request in $requests) { $lines.Add("| ``$($request.Name)`` | $($request.Count) |") }
+    $lines.Add(''); $lines.Add('## Interpretacao'); $lines.Add('')
+    $lines.Add('- Estes dados vieram da conexao real entre ProgBase e ECU virtual durante a campanha.')
+    $lines.Add('- Cada transacao preserva `stateSequence`, permitindo relacionar o pedido ao estado virtual que estava ativo.')
+    $lines.Add('- Acoes de escrita e reset sao validas somente nesta ECU virtual.')
+    [IO.File]::WriteAllLines((Join-Path $script:sessionRoot 'CAMPANHA_PROGBASE.md'), $lines, [Text.Encoding]::UTF8)
+}
+function Start-ProgBaseCampaign {
+    if ($script:behaviorBuckets.Count -eq 0) { $status.Text='Nao ha modelo comportamental para iniciar a campanha.'; return }
+    $script:campaign = [ordered]@{ total = 1000; index = 0; startSequence = $script:stateSequence + 1; endSequence = 0 }
+    Write-LabEvent @{ type='campaign-start'; total=1000; startSequence=$script:campaign.startSequence; purpose='Observar pedidos do ProgBase contra mil estados virtuais.' }
+    $status.Text='Campanha iniciada: 1.000 estados serao publicados para o ProgBase.'
+}
+function Stop-ProgBaseCampaign([string]$Reason) {
+    if ($null -eq $script:campaign) { return }
+    $script:campaign.endSequence = $script:stateSequence
+    Write-LabEvent @{ type='campaign-end'; completed=$script:campaign.index; total=$script:campaign.total; reason=$Reason; endSequence=$script:campaign.endSequence }
+    Write-CampaignReport
+    $status.Text="Campanha encerrada: $($script:campaign.index) de $($script:campaign.total) estados. Relatorio salvo."
+    $script:campaign = $null
+}
 function Approach([double]$Current, [double]$Target, [double]$Rate, [double]$Dt) {
     return $Current + ($Target - $Current) * [Math]::Min(1, $Rate * $Dt)
 }
@@ -214,7 +286,7 @@ function Get-ProtocolSummary {
     if ($null -eq $last) {
         $script:lastProtocolSummary = [ordered]@{ last='Aguardando a primeira leitura do ProgBase'; source=''; transactions=0; unknown=0 }
     } else {
-        $description = if ($last.request -like '29 61 01*') { 'Leitura da Curva K (MUL_ACT)' } elseif ($last.request -like '48 01 49*') { 'Leitura de telemetria' } elseif ($last.source -eq 'generic-ack') { 'Comando ainda nao mapeado' } else { 'Leitura ou resposta do protocolo' }
+        $description = if ($last.request -like '29 61 01*') { 'Leitura da Curva K (MUL_ACT)' } elseif ($last.request -like '48 01 49*') { 'Leitura de telemetria' } elseif ($last.source -eq 'virtual-autocal-reset') { 'Reset AutoCal aplicado na ECU virtual' } elseif ($last.source -eq 'virtual-automatch-hypothesis') { 'AutoMatch experimental aplicou uma Curva K virtual' } elseif ($last.source -eq 'virtual-write') { 'Escrita aplicada na memoria da ECU virtual' } elseif ($last.source -eq 'generic-ack') { 'Comando ainda nao mapeado' } else { 'Leitura ou resposta do protocolo' }
         $script:lastProtocolSummary = [ordered]@{ last=$description; source=$last.source; transactions=$transactions.Count; unknown=$unknown }
     }
     return $script:lastProtocolSummary
@@ -252,6 +324,7 @@ function Write-SessionSummary {
     $lines.Add('- `scenario-interactive`: telemetria formada pelo estado desta bancada.')
     $lines.Add('- `virtual-write`: alteracao manual da Curva K ou do Mapa K guardada somente na memoria da ECU virtual.')
     $lines.Add('- `virtual-autocal-reset`: limpeza virtual dos buffers AutoCal. A acao foi entendida e aplicada no estado da bancada.')
+    $lines.Add('- `virtual-automatch-hypothesis`: atualizacao experimental da Curva K virtual por comparacao horizontal das curvas de retorno. Nao e uma alegacao de formula original Landi.')
     $lines.Add('- `generic-ack`: pedido ainda sem resposta real mapeada. E uma lacuna para investigar, nao um dado da ECU.')
     [IO.File]::WriteAllLines((Join-Path $script:sessionRoot 'RESUMO.md'), $lines, [Text.Encoding]::UTF8)
 }
@@ -322,6 +395,8 @@ $timeline=Add-Label 'Sessao iniciando...' 18 328 335 100; $timeline.ForeColor=[D
 $sessionLabel=Add-Label 'Sessao: preparando...' 18 455 335 46; $sessionLabel.ForeColor=[Drawing.Color]::DarkGray
 $openSessionButton=New-Object Windows.Forms.Button; $openSessionButton.Text='Abrir arquivos da sessao'; $openSessionButton.Location='18,510'; $openSessionButton.Size='165,31'; $experimentPane.Controls.Add($openSessionButton)
 $newSessionButton=New-Object Windows.Forms.Button; $newSessionButton.Text='Novo ensaio'; $newSessionButton.Location='190,510'; $newSessionButton.Size='163,31'; $experimentPane.Controls.Add($newSessionButton)
+$campaignButton=New-Object Windows.Forms.Button; $campaignButton.Text='Rodar 1.000 cenarios'; $campaignButton.Location='18,548'; $campaignButton.Size='200,31'; $experimentPane.Controls.Add($campaignButton)
+$stopCampaignButton=New-Object Windows.Forms.Button; $stopCampaignButton.Text='Parar campanha'; $stopCampaignButton.Location='225,548'; $stopCampaignButton.Size='128,31'; $stopCampaignButton.Enabled=$false; $experimentPane.Controls.Add($stopCampaignButton)
 
 $script:activeSurface=$form
 $footer=Add-Label 'BANCADA   |   Cenarios e telemetria ficam nesta tela. Os detalhes tecnicos continuam registrados nos arquivos da sessao.' 20 675 1195 24; $footer.ForeColor=[Drawing.Color]::Gray
@@ -342,11 +417,18 @@ $markButton.Add_Click({ $note=$noteBox.Text.Trim(); if([string]::IsNullOrWhiteSp
 $quickPre.Add_Click({Add-QuickMarker 'Antes da acao no ProgBase'})
 $quickAction.Add_Click({Add-QuickMarker 'Acao executada no ProgBase'})
 $quickAfter.Add_Click({Add-QuickMarker 'Depois da acao no ProgBase'})
-$newSessionButton.Add_Click({ Write-SessionSummary; Start-NewSession; $status.Text='Novo ensaio iniciado.' })
+$newSessionButton.Add_Click({ Stop-ProgBaseCampaign 'nova-sessao'; Write-SessionSummary; Start-NewSession; $status.Text='Novo ensaio iniciado.' })
 $openSessionButton.Add_Click({ if(-not [string]::IsNullOrWhiteSpace($script:sessionRoot)){Start-Process explorer.exe -ArgumentList "`"$script:sessionRoot`""} })
+$campaignButton.Add_Click({ if($null -eq $script:campaign){ Start-ProgBaseCampaign; $campaignButton.Enabled=$false; $stopCampaignButton.Enabled=$true } })
+$stopCampaignButton.Add_Click({ Stop-ProgBaseCampaign 'operador'; $campaignButton.Enabled=$true; $stopCampaignButton.Enabled=$false })
 $timer=New-Object Windows.Forms.Timer; $timer.Interval=120
 $timer.Add_Tick({
-    $state=Update-Plant; Publish-State $state; $protocol=Get-ProtocolSummary
+    if($null -ne $script:campaign){
+        $state=New-CampaignState; Publish-State $state; $script:campaign.index++
+        if(($script:campaign.index % 25) -eq 0){Write-LabEvent @{type='campaign-progress'; completed=$script:campaign.index; total=$script:campaign.total; state=$state}}
+        if($script:campaign.index -ge $script:campaign.total){Stop-ProgBaseCampaign 'concluida'; $campaignButton.Enabled=$true; $stopCampaignButton.Enabled=$false}
+    } else { $state=Update-Plant; Publish-State $state }
+    $protocol=Get-ProtocolSummary
     $rpmControl=if($state.manualRpm){"fixada em $($state.requestedRpm) rpm"}else{'dinamica'}
     $rpmHeadline.Text=('{0:N0} RPM' -f $state.rpm)
     $ratio=if($state.petrolMs -gt 0){[Math]::Round($state.gasMs/$state.petrolMs,2)}else{0}
@@ -361,11 +443,15 @@ $timer.Add_Tick({
     $lastAction.Text="$($protocol.last)`nOrigem: $($protocol.source)    Desconhecidos: $($protocol.unknown)"
     $events=@(Read-JsonLines $script:sessionEventsPath | Where-Object {$_.type -in @('session-start','profile','marker','engine-toggle')} | Select-Object -Last 4)
     $timeline.Text=if($events.Count -eq 0){'Nenhum evento ainda.'}else{(($events | ForEach-Object { "$([datetimeoffset]$_.timestamp | ForEach-Object { $_.ToLocalTime().ToString('HH:mm:ss') })  $($_.type): $($_.note)$($_.profile)" }) -join "`n")}
-    $sessionLabel.Text="Sessao: $(Split-Path $script:sessionRoot -Leaf)"
+    $sessionLabel.Text=if($null -ne $script:campaign){"Campanha: $($script:campaign.index) / $($script:campaign.total)`nSessao: $(Split-Path $script:sessionRoot -Leaf)"}else{"Sessao: $(Split-Path $script:sessionRoot -Leaf)"}
     $elapsed=if($null -eq $script:sessionStartedAt){[TimeSpan]::Zero}else{([DateTime]::UtcNow-$script:sessionStartedAt)}; $elapsedLabel.Text=('Sessao: {0:hh\:mm\:ss}' -f $elapsed)
     $topStatus.Text=if($online){"● ECU virtual: ATIVA     $(if($protocol.transactions -gt 0){'● ProgBase: CONECTADO'}else{'■ ProgBase: AGUARDANDO'})"}else{'■ ECU virtual: OFFLINE'}
     $status.Text="Estado: $($state.behaviorState) | Acoplamento: $($controls.coupling.SelectedItem) | Comportamento: $($controls.stabilityMode.SelectedItem) | Publicacao #$($state.sequence)"
 })
-$form.Add_Shown({Start-NewSession;$timer.Start()})
-$form.Add_FormClosed({Write-LabEvent @{type='session-end'}; Write-SessionSummary; if($null -ne $script:engineProcess -and -not $script:engineProcess.HasExited){Stop-Process -Id $script:engineProcess.Id -Force -ErrorAction SilentlyContinue}})
+$form.Add_Shown({
+    Start-NewSession
+    if($IniciarCampanha){ Start-ProgBaseCampaign; $campaignButton.Enabled=$false; $stopCampaignButton.Enabled=$true }
+    $timer.Start()
+})
+$form.Add_FormClosed({Stop-ProgBaseCampaign 'janela-fechada'; Write-LabEvent @{type='session-end'}; Write-SessionSummary; if($null -ne $script:engineProcess -and -not $script:engineProcess.HasExited){Stop-Process -Id $script:engineProcess.Id -Force -ErrorAction SilentlyContinue}})
 [void]$form.ShowDialog()

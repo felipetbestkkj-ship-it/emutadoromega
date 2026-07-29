@@ -73,7 +73,7 @@ function Initialize-VirtualMemory(
     [Collections.Generic.Dictionary[string, byte[]]]$Responses,
     [string]$Path
 ) {
-    $memory = [ordered]@{ mul = [int[]]::new(30); map = @(); writeCount = 0; autoCalResetMask = 0; autoCalResetCount = 0 }
+    $memory = [ordered]@{ mul = [int[]]::new(30); map = @(); writeCount = 0; autoCalResetMask = 0; autoCalResetCount = 0; autoMatchCount = 0 }
     $mulResponse = $Responses['29 61 01 8B']
     for ($index = 0; $index -lt 30; $index++) {
         $memory.mul[$index] = [int]$mulResponse[2 + ($index * 2)] + ([int]$mulResponse[3 + ($index * 2)] * 256)
@@ -96,6 +96,7 @@ function Initialize-VirtualMemory(
                 $memory.writeCount = [int]$saved.writeCount
                 if ($null -ne $saved.autoCalResetMask) { $memory.autoCalResetMask = [int]$saved.autoCalResetMask }
                 if ($null -ne $saved.autoCalResetCount) { $memory.autoCalResetCount = [int]$saved.autoCalResetCount }
+                if ($null -ne $saved.autoMatchCount) { $memory.autoMatchCount = [int]$saved.autoMatchCount }
             }
         } catch {
             Write-Log "virtual-memory-read-error=$($_.Exception.Message)"
@@ -189,6 +190,63 @@ function Apply-PersistedAutoCalReset {
     $mask = [int]$script:VirtualMemory.autoCalResetMask
     if (($mask -band 1) -ne 0) { foreach ($key in @('29 5B 01 85','29 62 01 8C','29 63 01 8D','29 6F 01 99','29 8D 01 B7')) { Reset-ObservedVector $key } }
     if (($mask -band 2) -ne 0) { foreach ($key in @('29 5C 01 86','29 5D 01 87','29 5E 01 88','29 5F 01 89','29 60 01 8A','29 70 01 9A','29 8E 01 B8')) { Reset-ObservedVector $key } }
+}
+
+function Get-ObservedU16Vector([string]$Key) {
+    if (-not $responses.ContainsKey($Key)) { return @() }
+    $response = $responses[$Key]
+    $values = @()
+    for ($offset = 2; $offset -lt ($response.Length - 2); $offset += 2) {
+        $values += ([int]$response[$offset] + ([int]$response[$offset + 1] * 256))
+    }
+    return $values
+}
+
+function Get-InverseCurveTime([int[]]$Axis, [int[]]$Curve, [int]$Target) {
+    for ($index = 0; $index -lt ($Curve.Length - 1); $index++) {
+        $left = $Curve[$index]; $right = $Curve[$index + 1]
+        if ($left -eq 0 -or $right -eq 0 -or $right -eq $left) { continue }
+        if (($Target -ge [Math]::Min($left, $right)) -and ($Target -le [Math]::Max($left, $right))) {
+            return $Axis[$index] + [int][Math]::Truncate((($Target - $left) * ($Axis[$index + 1] - $Axis[$index])) / ($right - $left))
+        }
+    }
+    return $null
+}
+
+function Apply-VirtualAutoMatch([byte[]]$Request) {
+    if ($Request.Length -ne 5 -or $Request[0] -ne 0x02 -or $Request[1] -ne 0x24 -or $Request[2] -ne 0x04 -or $Request[3] -ne 0x08) { return $null }
+    if (-not (Test-RequestChecksum $Request)) { return $null }
+
+    # Modelo de laboratorio, nunca uma alegacao de formula Landi: usa as duas
+    # curvas de retorno para gerar um deslocamento horizontal em Q14.
+    $axis = [int[]](Get-ObservedU16Vector '29 4B 01 75')
+    $petrol = [int[]](Get-ObservedU16Vector '29 8D 01 B7')
+    $gas = [int[]](Get-ObservedU16Vector '29 8E 01 B8')
+    if ($axis.Length -ne 30 -or $petrol.Length -ne 30 -or $gas.Length -ne 30) {
+        return [pscustomobject]@{ target = 'AUTOMATCH_HYPOTHESIS'; changed = 0; reason = 'curvas-ausentes' }
+    }
+    $calculated = [int[]]::new(30)
+    $valid = [Collections.Generic.List[int]]::new()
+    for ($index = 0; $index -lt 30; $index++) {
+        if ($axis[$index] -le 0 -or $petrol[$index] -le 0) { continue }
+        $gasTime = Get-InverseCurveTime $axis $gas $petrol[$index]
+        if ($null -eq $gasTime -or $gasTime -le 0) { continue }
+        $calculated[$index] = [Math]::Max(9830, [Math]::Min(57344, [int][Math]::Truncate(($gasTime * 16384.0) / $axis[$index])))
+        $valid.Add($index)
+    }
+    if ($valid.Count -eq 0) { return [pscustomobject]@{ target = 'AUTOMATCH_HYPOTHESIS'; changed = 0; reason = 'sem-sobreposicao' } }
+    $first = $valid[0]; $last = $valid[$valid.Count - 1]
+    for ($index = 0; $index -lt $first; $index++) { $calculated[$index] = $calculated[$first] }
+    for ($index = $last + 1; $index -lt 30; $index++) { $calculated[$index] = $calculated[$last] }
+    $changed = 0
+    for ($index = 0; $index -lt 30; $index++) {
+        if ($script:VirtualMemory.mul[$index] -ne $calculated[$index]) { $changed++ }
+        $script:VirtualMemory.mul[$index] = $calculated[$index]
+    }
+    $script:VirtualMemory.autoMatchCount++
+    Sync-VirtualMemoryToResponses $responses
+    Save-VirtualMemory
+    return [pscustomobject]@{ target = 'AUTOMATCH_HYPOTHESIS'; changed = $changed; count = $script:VirtualMemory.autoMatchCount; formula = 'horizontal-q14-lab' }
 }
 
 function New-ScenarioTelemetry([string]$Name, [int]$Tick) {
@@ -424,6 +482,10 @@ if ($SelfTest) {
     if ((Convert-BytesToHex $parsed) -ne '00 02 02') {
         throw 'Parser nao removeu wake byte corretamente'
     }
+    $autoMatch = Apply-VirtualAutoMatch (Convert-HexToBytes '02 24 04 08 32')
+    if ($null -eq $autoMatch -or $autoMatch.target -ne 'AUTOMATCH_HYPOTHESIS' -or $autoMatch.changed -le 0) {
+        throw 'AutoMatch experimental nao atualizou a Curva K virtual'
+    }
     $petrolCountBefore = [byte[]]$responses['29 5B 01 85'].Clone()
     $resetPetrol = Apply-VirtualAutoCalReset (Convert-HexToBytes '02 24 04 01 2B')
     if ($null -eq $resetPetrol -or $resetPetrol.target -ne 'AUTOCAL_RESET' -or $resetPetrol.mode -ne 'gasolina') {
@@ -483,9 +545,10 @@ while ($true) {
                 $requestKey = Convert-BytesToHex $request
                 $virtualWrite = Apply-VirtualWrite $request
                 if ($null -eq $virtualWrite) { $virtualWrite = Apply-VirtualAutoCalReset $request }
+                if ($null -eq $virtualWrite) { $virtualWrite = Apply-VirtualAutoMatch $request }
                 if ($null -ne $virtualWrite) {
                     $response = New-AckFrame
-                    $source = if ($virtualWrite.target -eq 'AUTOCAL_RESET') { 'virtual-autocal-reset' } else { 'virtual-write' }
+                    $source = if ($virtualWrite.target -eq 'AUTOCAL_RESET') { 'virtual-autocal-reset' } elseif ($virtualWrite.target -eq 'AUTOMATCH_HYPOTHESIS') { 'virtual-automatch-hypothesis' } else { 'virtual-write' }
                 } elseif ($requestKey -eq '48 01 49' -and $Scenario -ne 'captured') {
                     $script:ScenarioTick++
                     $response = if ($Scenario -eq 'interactive') { New-InteractiveTelemetry $ScenarioFile } else { New-ScenarioTelemetry $Scenario $script:ScenarioTick }
