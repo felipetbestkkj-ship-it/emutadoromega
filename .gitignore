@@ -12,3 +12,4 @@ __pycache__/
 
 # Estado transitório do motor virtual.
 Capturas/estado-interativo.json
+Dados/Importacoes/

@@ -4,6 +4,12 @@ Abra somente `Iniciar Omegas Lab.cmd`.
 
 Com o ProgBase ja conectado, use **Rodar 1.000 cenarios** no painel `ENSAIO` — ou abra `Executar 1000 ensaios.cmd`. A campanha publica mil estados coerentes do modelo enquanto preserva a conexao atual ProgBase → ECU virtual. Ao final, `CAMPANHA_PROGBASE.md` mostra quais pedidos o ProgBase realmente fez em cada faixa de estados. Nenhuma acao fisica e envolvida: escritas, resets e AutoMatch experimental permanecem dentro da memoria da ECU virtual.
 
+## Importar e repetir logs
+
+Use **Importar logs** para selecionar varias exportacoes `.zip`, `.jsonl`, `.json`, `.log` ou `.txt`. O laboratorio procura telemetrias estruturadas, normaliza os campos e cria um replay local em `Dados\Importacoes`. Depois clique em **Loop importado**: os estados importados passam a ser publicados em ordem e voltam ao inicio automaticamente, sem interromper o ProgBase conectado. Ao parar, o arquivo `REPLAY_LOGS_PROGBASE.md` mostra o que o ProgBase realmente pediu durante o replay.
+
+Arquivos seriais crus sem telemetria estruturada continuam uteis como evidencia de protocolo, mas nao podem virar estado de motor sem uma decodificacao especifica; o importador avisa quando nenhum ponto reproduzivel foi encontrado.
+
 O laboratorio cria uma pasta propria em `Sessoes` para cada ensaio. Nela ficam o estado enviado a ECU virtual, o trafego serial, os eventos e o resumo do que aconteceu. A ECU fisica nunca e acessada.
 
 Esta pasta e autossuficiente: o catalogo de respostas observadas utilizado pelo emulador fica em `Dados`. As sessoes e capturas historicas ficam locais e nao fazem parte da sincronizacao com o repositorio, para que o codigo do laboratorio permaneça leve e reproduzivel.

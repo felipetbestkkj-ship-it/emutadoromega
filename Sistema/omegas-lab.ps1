@@ -19,6 +19,7 @@ $script:lastProtocolScanAt = [DateTime]::MinValue
 $script:lastProtocolSummary = [ordered]@{ last='Aguardando o ProgBase'; source=''; transactions=0; unknown=0 }
 $script:plant = [ordered]@{ running=$false; rpm=0.0; mapBar=0.28; petrolMs=0.0; gasMs=0.0; waterC=24.0; gasC=24.0; pressureBar=1.10; correction=0.0; level=68.0; stableSince=$null }
 $script:campaign = $null
+$script:replay = $null
 $script:behaviorModelPath = Join-Path $laboratoryRoot 'Dados\modelo-comportamental.json'
 $script:behaviorBuckets = @()
 $script:behaviorModelStatus = 'Fallback interno: modelo comportamental indisponivel.'
@@ -209,6 +210,74 @@ function Stop-ProgBaseCampaign([string]$Reason) {
     $status.Text="Campanha encerrada: $($script:campaign.index) de $($script:campaign.total) estados. Relatorio salvo."
     $script:campaign = $null
 }
+function New-ReplayState {
+    $replay = $script:replay
+    $sample = $replay.samples[$replay.index]
+    return [ordered]@{
+        rpm=[int]$sample.rpm; petrolMs=[double]$sample.petrolMs; gasMs=[double]$sample.gasMs
+        mapBar=[double]$sample.mapBar; pressureBar=[double]$sample.pressureBar
+        waterC=[int]$sample.waterC; gasC=[int]$sample.gasC; levelPercent=[int]$sample.levelPercent
+        dynamicCorrection=[int]$sample.dynamicCorrection; fuel=[string]$sample.fuel
+        cutoff=[bool]$sample.cutoff; stable=[bool]$sample.stable; stableSeconds=0
+        behaviorState=[string]$sample.behaviorState; manualRpm=$false; requestedRpm=0
+        modelBucket="Importado: $($sample.source)"; modelStatus="Replay de log: $($replay.index + 1) de $($replay.samples.Count)"
+        replay='logs-importados-v1'
+    }
+}
+function Write-ReplayReport {
+    if ($null -eq $script:replay -or [string]::IsNullOrWhiteSpace($script:sessionRoot)) { return }
+    $events = @(Read-JsonLines (Join-Path $script:sessionRoot 'protocol-events.jsonl') | Where-Object {
+        $_.type -eq 'transaction' -and $null -ne $_.stateSequence -and [int64]$_.stateSequence -ge $script:replay.startSequence -and [int64]$_.stateSequence -le $script:replay.endSequence
+    })
+    $requests = @($events | Group-Object request | Sort-Object Count -Descending | Select-Object -First 25)
+    $lines = [Collections.Generic.List[string]]::new()
+    $lines.Add('# Replay de logs no ProgBase'); $lines.Add('')
+    $lines.Add("- Amostras importadas: **$($script:replay.samples.Count)**")
+    $lines.Add("- Voltas concluidas: **$($script:replay.cycles)**")
+    $lines.Add("- Estados publicados neste replay: **$($script:replay.published)**")
+    $lines.Add("- Pedidos reais do ProgBase observados: **$($events.Count)**")
+    $lines.Add(''); $lines.Add('## Pedidos observados'); $lines.Add('')
+    $lines.Add('| Pedido | Vezes |'); $lines.Add('|---|---:|')
+    foreach ($request in $requests) { $lines.Add("| ``$($request.Name)`` | $($request.Count) |") }
+    $lines.Add(''); $lines.Add('- Cada transacao pode ser correlacionada ao estado publicado por `stateSequence` em `protocol-events.jsonl`.')
+    [IO.File]::WriteAllLines((Join-Path $script:sessionRoot 'REPLAY_LOGS_PROGBASE.md'), $lines, [Text.Encoding]::UTF8)
+}
+function Stop-LogReplay([string]$Reason) {
+    if ($null -eq $script:replay) { return }
+    $script:replay.endSequence = $script:stateSequence
+    Write-LabEvent @{ type='replay-end'; published=$script:replay.published; cycles=$script:replay.cycles; reason=$Reason; endSequence=$script:replay.endSequence }
+    Write-ReplayReport
+    $status.Text="Replay encerrado: $($script:replay.published) estados publicados. Relatorio salvo."
+    $script:replay = $null
+}
+function Import-ReplayFiles {
+    $dialog = New-Object Windows.Forms.OpenFileDialog
+    $dialog.Multiselect=$true; $dialog.Filter='Sessoes e logs (*.zip;*.jsonl;*.json;*.log;*.txt)|*.zip;*.jsonl;*.json;*.log;*.txt|Todos os arquivos (*.*)|*.*'
+    if($dialog.ShowDialog() -ne [Windows.Forms.DialogResult]::OK){ return }
+    $importer = Join-Path $PSScriptRoot 'importar-sessoes-replay.py'
+    $importRoot = Join-Path $laboratoryRoot 'Dados\Importacoes'
+    [IO.Directory]::CreateDirectory($importRoot) | Out-Null
+    $output = Join-Path $importRoot ("replay-" + (Get-Date -Format 'yyyyMMdd-HHmmss') + '.json')
+    try {
+        $result = & python.exe $importer @($dialog.FileNames) '-o' $output 2>&1
+        if($LASTEXITCODE -ne 0){ throw ($result -join [Environment]::NewLine) }
+        $candidate = Get-Content -LiteralPath $output -Raw | ConvertFrom-Json
+        if($candidate.schema -ne 'omegas-replay-v1' -or @($candidate.samples).Count -eq 0){ throw 'Nenhuma telemetria utilizavel foi encontrada nos arquivos selecionados.' }
+        $script:replayData = $candidate
+        $replayButton.Enabled=$true
+        $status.Text="Importacao concluida: $($candidate.sampleCount) amostras prontas para replay em loop."
+        Write-LabEvent @{type='replay-import'; file=$output; sampleCount=$candidate.sampleCount; sources=$candidate.sources}
+    } catch {
+        $status.Text="Nao foi possivel importar: $($_.Exception.Message)"
+    }
+}
+function Start-LogReplay {
+    if($null -eq $script:replayData -or @($script:replayData.samples).Count -eq 0){ $status.Text='Importe uma ou mais sessoes antes de iniciar o replay.'; return }
+    if($null -ne $script:campaign){ Stop-ProgBaseCampaign 'inicio-replay' }
+    $script:replay=[ordered]@{ samples=@($script:replayData.samples); index=0; cycles=0; published=0; startSequence=$script:stateSequence+1; endSequence=0 }
+    Write-LabEvent @{type='replay-start'; sampleCount=$script:replay.samples.Count; startSequence=$script:replay.startSequence; mode='loop'}
+    $status.Text="Replay em loop iniciado: $($script:replay.samples.Count) amostras importadas."
+}
 function Approach([double]$Current, [double]$Target, [double]$Rate, [double]$Dt) {
     return $Current + ($Target - $Current) * [Math]::Min(1, $Rate * $Dt)
 }
@@ -339,9 +408,9 @@ $topStatus=Add-Label '● ECU virtual: preparando     ■ ProgBase: aguardando' 
 $elapsedLabel=Add-Label 'Sessao: 00:00:00' 1000 20 210 24; $elapsedLabel.TextAlign='MiddleRight'
 $evidence=Add-Label 'Bancada segura: somente ECU virtual. Os registros da sessao ficam juntos e as respostas mantem sua origem.' 20 51 1180 24; $evidence.ForeColor=[Drawing.Color]::Khaki
 
-$controlPane=New-Object Windows.Forms.GroupBox; $controlPane.Text='CONTROLE - o que voce quer provocar'; $controlPane.Location='20,85'; $controlPane.Size='340,565'; $controlPane.ForeColor=[Drawing.Color]::LightSkyBlue; $form.Controls.Add($controlPane)
-$motorPane=New-Object Windows.Forms.GroupBox; $motorPane.Text='MOTOR VIRTUAL - o que esta sendo produzido'; $motorPane.Location='375,85'; $motorPane.Size='450,565'; $motorPane.ForeColor=[Drawing.Color]::LightSkyBlue; $form.Controls.Add($motorPane)
-$experimentPane=New-Object Windows.Forms.GroupBox; $experimentPane.Text='ENSAIO - comunicacao e marcadores'; $experimentPane.Location='840,85'; $experimentPane.Size='375,565'; $experimentPane.ForeColor=[Drawing.Color]::LightSkyBlue; $form.Controls.Add($experimentPane)
+$controlPane=New-Object Windows.Forms.GroupBox; $controlPane.Text='CONTROLE - o que voce quer provocar'; $controlPane.Location='20,85'; $controlPane.Size='340,575'; $controlPane.ForeColor=[Drawing.Color]::LightSkyBlue; $form.Controls.Add($controlPane)
+$motorPane=New-Object Windows.Forms.GroupBox; $motorPane.Text='MOTOR VIRTUAL - o que esta sendo produzido'; $motorPane.Location='375,85'; $motorPane.Size='450,575'; $motorPane.ForeColor=[Drawing.Color]::LightSkyBlue; $form.Controls.Add($motorPane)
+$experimentPane=New-Object Windows.Forms.GroupBox; $experimentPane.Text='ENSAIO - comunicacao e marcadores'; $experimentPane.Location='840,85'; $experimentPane.Size='375,575'; $experimentPane.ForeColor=[Drawing.Color]::LightSkyBlue; $form.Controls.Add($experimentPane)
 
 $script:activeSurface=$controlPane
 $fuelLabel=Add-Label 'Combustivel solicitado' 18 28 160
@@ -390,8 +459,10 @@ $markButton=New-Object Windows.Forms.Button; $markButton.Text='Registrar marcado
 $quickPre=New-Object Windows.Forms.Button; $quickPre.Text='Antes'; $quickPre.Location='190,250'; $quickPre.Size='50,31'; $experimentPane.Controls.Add($quickPre)
 $quickAction=New-Object Windows.Forms.Button; $quickAction.Text='Acao'; $quickAction.Location='245,250'; $quickAction.Size='50,31'; $experimentPane.Controls.Add($quickAction)
 $quickAfter=New-Object Windows.Forms.Button; $quickAfter.Text='Depois'; $quickAfter.Location='300,250'; $quickAfter.Size='53,31'; $experimentPane.Controls.Add($quickAfter)
-$timelineTitle=Add-Label 'Cronologia desta sessao' 18 300 320 22 (New-Object Drawing.Font('Segoe UI',10,[Drawing.FontStyle]::Bold))
-$timeline=Add-Label 'Sessao iniciando...' 18 328 335 100; $timeline.ForeColor=[Drawing.Color]::Silver
+$importButton=New-Object Windows.Forms.Button; $importButton.Text='Importar logs'; $importButton.Location='18,284'; $importButton.Size='150,29'; $experimentPane.Controls.Add($importButton)
+$replayButton=New-Object Windows.Forms.Button; $replayButton.Text='Loop importado'; $replayButton.Location='180,284'; $replayButton.Size='173,29'; $replayButton.Enabled=$false; $experimentPane.Controls.Add($replayButton)
+$timelineTitle=Add-Label 'Cronologia desta sessao' 18 322 320 22 (New-Object Drawing.Font('Segoe UI',10,[Drawing.FontStyle]::Bold))
+$timeline=Add-Label 'Sessao iniciando...' 18 350 335 90; $timeline.ForeColor=[Drawing.Color]::Silver
 $sessionLabel=Add-Label 'Sessao: preparando...' 18 455 335 46; $sessionLabel.ForeColor=[Drawing.Color]::DarkGray
 $openSessionButton=New-Object Windows.Forms.Button; $openSessionButton.Text='Abrir arquivos da sessao'; $openSessionButton.Location='18,510'; $openSessionButton.Size='165,31'; $experimentPane.Controls.Add($openSessionButton)
 $newSessionButton=New-Object Windows.Forms.Button; $newSessionButton.Text='Novo ensaio'; $newSessionButton.Location='190,510'; $newSessionButton.Size='163,31'; $experimentPane.Controls.Add($newSessionButton)
@@ -417,16 +488,22 @@ $markButton.Add_Click({ $note=$noteBox.Text.Trim(); if([string]::IsNullOrWhiteSp
 $quickPre.Add_Click({Add-QuickMarker 'Antes da acao no ProgBase'})
 $quickAction.Add_Click({Add-QuickMarker 'Acao executada no ProgBase'})
 $quickAfter.Add_Click({Add-QuickMarker 'Depois da acao no ProgBase'})
-$newSessionButton.Add_Click({ Stop-ProgBaseCampaign 'nova-sessao'; Write-SessionSummary; Start-NewSession; $status.Text='Novo ensaio iniciado.' })
+$importButton.Add_Click({ Import-ReplayFiles })
+$replayButton.Add_Click({ if($null -eq $script:replay){ Start-LogReplay; $replayButton.Text='Loop em andamento'; $campaignButton.Enabled=$false; $stopCampaignButton.Enabled=$true } })
+$newSessionButton.Add_Click({ Stop-ProgBaseCampaign 'nova-sessao'; Stop-LogReplay 'nova-sessao'; Write-SessionSummary; Start-NewSession; $status.Text='Novo ensaio iniciado.' })
 $openSessionButton.Add_Click({ if(-not [string]::IsNullOrWhiteSpace($script:sessionRoot)){Start-Process explorer.exe -ArgumentList "`"$script:sessionRoot`""} })
-$campaignButton.Add_Click({ if($null -eq $script:campaign){ Start-ProgBaseCampaign; $campaignButton.Enabled=$false; $stopCampaignButton.Enabled=$true } })
-$stopCampaignButton.Add_Click({ Stop-ProgBaseCampaign 'operador'; $campaignButton.Enabled=$true; $stopCampaignButton.Enabled=$false })
+$campaignButton.Add_Click({ if($null -eq $script:campaign){ Stop-LogReplay 'inicio-campanha'; Start-ProgBaseCampaign; $campaignButton.Enabled=$false; $replayButton.Enabled=$false; $stopCampaignButton.Enabled=$true } })
+$stopCampaignButton.Add_Click({ Stop-ProgBaseCampaign 'operador'; Stop-LogReplay 'operador'; $campaignButton.Enabled=$true; $replayButton.Enabled=($null -ne $script:replayData); $replayButton.Text='Loop importado'; $stopCampaignButton.Enabled=$false })
 $timer=New-Object Windows.Forms.Timer; $timer.Interval=120
 $timer.Add_Tick({
     if($null -ne $script:campaign){
         $state=New-CampaignState; Publish-State $state; $script:campaign.index++
         if(($script:campaign.index % 25) -eq 0){Write-LabEvent @{type='campaign-progress'; completed=$script:campaign.index; total=$script:campaign.total; state=$state}}
         if($script:campaign.index -ge $script:campaign.total){Stop-ProgBaseCampaign 'concluida'; $campaignButton.Enabled=$true; $stopCampaignButton.Enabled=$false}
+    } elseif($null -ne $script:replay){
+        $state=New-ReplayState; Publish-State $state; $script:replay.index++; $script:replay.published++
+        if(($script:replay.published % 100) -eq 0){Write-LabEvent @{type='replay-progress'; published=$script:replay.published; cycles=$script:replay.cycles; state=$state}}
+        if($script:replay.index -ge $script:replay.samples.Count){$script:replay.index=0; $script:replay.cycles++; Write-LabEvent @{type='replay-cycle'; cycles=$script:replay.cycles}}
     } else { $state=Update-Plant; Publish-State $state }
     $protocol=Get-ProtocolSummary
     $rpmControl=if($state.manualRpm){"fixada em $($state.requestedRpm) rpm"}else{'dinamica'}
@@ -443,7 +520,7 @@ $timer.Add_Tick({
     $lastAction.Text="$($protocol.last)`nOrigem: $($protocol.source)    Desconhecidos: $($protocol.unknown)"
     $events=@(Read-JsonLines $script:sessionEventsPath | Where-Object {$_.type -in @('session-start','profile','marker','engine-toggle')} | Select-Object -Last 4)
     $timeline.Text=if($events.Count -eq 0){'Nenhum evento ainda.'}else{(($events | ForEach-Object { "$([datetimeoffset]$_.timestamp | ForEach-Object { $_.ToLocalTime().ToString('HH:mm:ss') })  $($_.type): $($_.note)$($_.profile)" }) -join "`n")}
-    $sessionLabel.Text=if($null -ne $script:campaign){"Campanha: $($script:campaign.index) / $($script:campaign.total)`nSessao: $(Split-Path $script:sessionRoot -Leaf)"}else{"Sessao: $(Split-Path $script:sessionRoot -Leaf)"}
+    $sessionLabel.Text=if($null -ne $script:campaign){"Campanha: $($script:campaign.index) / $($script:campaign.total)`nSessao: $(Split-Path $script:sessionRoot -Leaf)"}elseif($null -ne $script:replay){"Replay: $($script:replay.published) estados | volta $($script:replay.cycles + 1)`nSessao: $(Split-Path $script:sessionRoot -Leaf)"}else{"Sessao: $(Split-Path $script:sessionRoot -Leaf)"}
     $elapsed=if($null -eq $script:sessionStartedAt){[TimeSpan]::Zero}else{([DateTime]::UtcNow-$script:sessionStartedAt)}; $elapsedLabel.Text=('Sessao: {0:hh\:mm\:ss}' -f $elapsed)
     $topStatus.Text=if($online){"● ECU virtual: ATIVA     $(if($protocol.transactions -gt 0){'● ProgBase: CONECTADO'}else{'■ ProgBase: AGUARDANDO'})"}else{'■ ECU virtual: OFFLINE'}
     $status.Text="Estado: $($state.behaviorState) | Acoplamento: $($controls.coupling.SelectedItem) | Comportamento: $($controls.stabilityMode.SelectedItem) | Publicacao #$($state.sequence)"
@@ -453,5 +530,5 @@ $form.Add_Shown({
     if($IniciarCampanha){ Start-ProgBaseCampaign; $campaignButton.Enabled=$false; $stopCampaignButton.Enabled=$true }
     $timer.Start()
 })
-$form.Add_FormClosed({Stop-ProgBaseCampaign 'janela-fechada'; Write-LabEvent @{type='session-end'}; Write-SessionSummary; if($null -ne $script:engineProcess -and -not $script:engineProcess.HasExited){Stop-Process -Id $script:engineProcess.Id -Force -ErrorAction SilentlyContinue}})
+$form.Add_FormClosed({Stop-ProgBaseCampaign 'janela-fechada'; Stop-LogReplay 'janela-fechada'; Write-LabEvent @{type='session-end'}; Write-SessionSummary; if($null -ne $script:engineProcess -and -not $script:engineProcess.HasExited){Stop-Process -Id $script:engineProcess.Id -Force -ErrorAction SilentlyContinue}})
 [void]$form.ShowDialog()
