@@ -38,6 +38,8 @@ Para estudar o caminho de programacao do ProgBase, marque **Boot Spy (F5)** no p
 
 Qualquer quadro novo recebe uma recusa explicita e fica salvo como `boot-spy-unmapped`; isto e proposital. Assim nao confundimos uma resposta inventada com um comportamento verdadeiro do bootloader. Ao encerrar o ensaio, abra a pasta da sessao: `protocol-events.jsonl` guarda TX/RX e `RESUMO.md` contabiliza os quadros de boot. O Boot Spy revela a linguagem usada pelo ProgBase para programar a ECU virtual; ele nao extrai, por si so, o codigo residente do bootloader.
 
+O teste automatizado do protocolo fica em `Sistema\testar-boot-spy.ps1`. Ele exercita identificacao normal, todos os sentinelas conhecidos, comandos fragmentados, dois comandos no mesmo pacote, dezenas de quadros desconhecidos, desligamento do modo estrito, checksum invalido, desconexao e reconexao.
+
 ## Controles acoplados
 
 - **Coerente** (padrao): usa o padrao comportamental mais compativel e ajusta os sinais juntos.

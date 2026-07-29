@@ -793,7 +793,7 @@ while ($true) {
                 Write-Log "transaction request=$requestKey source=$source response=$(Convert-BytesToHex $response)"
                 $event = @{ type = 'transaction'; request = $requestKey; source = $source; response = (Convert-BytesToHex $response); scenario = $Scenario }
                 if ($null -ne $virtualWrite) { $event.virtualWrite = $virtualWrite }
-                if ($null -ne $bootResult) { $event.bootSpy = $bootResult }
+                if ($null -ne $bootResult -and $source -like 'boot-spy-*') { $event.bootSpy = $bootResult }
                 if ($Scenario -eq 'interactive' -and $null -ne $script:InteractiveState) {
                     $event.state = $script:InteractiveState
                     $event.stateSequence = $script:InteractiveStateSequence
